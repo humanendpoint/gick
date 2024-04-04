@@ -22,7 +22,7 @@ Fill in everything in config.yaml and in deployment.yml if you are using GCF
   - or use the same keys in the .yaml file as env vars wherever you host this
   - Run the workflow!
 
-Setup a gcloud function and edit your Slack app for interaction and events
+Setup a gcloud function and edit your Slack app for interaction and events  
 Wait for any output!
 
 ### Further considerations
