@@ -23,6 +23,7 @@ def message_building(conf):
 
     return pr_info_text
 
+
 def github_api_request(conf, endpoint):
     url = f"https://api.github.com/repos/{conf.org}/{endpoint}"
     headers = {"Authorization": f"token {conf.github_token}"}
@@ -33,35 +34,43 @@ def github_api_request(conf, endpoint):
         print(f"Failed to fetch {endpoint}:", response.status_code)
         return None
 
+
 def get_commit_messages(conf):
     commits = github_api_request(conf, f"/{conf.repo}/pulls/{conf.pr_number}/commits")
     if commits:
-        commit_messages = [commit['commit']['message'] for commit in commits]
+        commit_messages = [commit["commit"]["message"] for commit in commits]
         return commit_messages
     else:
         return None
 
+
 def get_pr_checks(conf):
-    checks = github_api_request(conf, f"/{conf.repo}/commits/{conf.merge_commit_sha}/check-runs")
+    checks = github_api_request(
+        conf, f"/{conf.repo}/commits/{conf.merge_commit_sha}/check-runs"
+    )
     if checks:
         return checks
     else:
         return None
 
+
 def get_team_members(conf):
-    team_members = github_api_request(conf, f"/{conf.org}/teams/{conf.team_slug}/members")
+    team_members = github_api_request(
+        conf, f"/{conf.org}/teams/{conf.team_slug}/members"
+    )
     if team_members:
         return team_members
     else:
         return None
 
+
 async def get_pr_files(conf):
     client = GraphQLClient("https://api.github.com/graphql")
     client.inject_token(conf.github_token)
-    
+
     files = []
     end_cursor = None
-    
+
     while True:
         graphql_query = """
         query ($owner: String!, $repo: String!, $pull_request: Int!, $endCursor: String) {
@@ -80,12 +89,16 @@ async def get_pr_files(conf):
             "owner": conf.org,
             "repo": conf.repo,
             "pull_request": conf.pr_number,
-            "endCursor": end_cursor
+            "endCursor": end_cursor,
         }
         response = await client.execute_async(query=graphql_query, variables=variables)
         data = json.loads(response)
-        
-        if "data" in data and "repository" in data["data"] and "pullRequest" in data["data"]["repository"]:
+
+        if (
+            "data" in data
+            and "repository" in data["data"]
+            and "pullRequest" in data["data"]["repository"]
+        ):
             pull_request = data["data"]["repository"]["pullRequest"]
             if "files" in pull_request:
                 files += [file["path"] for file in pull_request["files"]["nodes"]]
@@ -97,5 +110,5 @@ async def get_pr_files(conf):
                 break
         else:
             break
-    
+
     return files

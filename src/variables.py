@@ -20,7 +20,9 @@ class vars:
         self.pr_number = utilities.extract_value(payload, ["number"])
         self.pr_title = utilities.extract_value(payload, ["title"])
         self.pr_branch = utilities.extract_value(payload, ["head"])
-        self.assignee_emails = okta_tools.get_okta_usernames(self.org, self.team_slug, self.okta_token, self.okta_url, payload)
+        self.assignee_emails = okta_tools.get_okta_usernames(
+            self.org, self.team_slug, self.okta_token, self.okta_url, payload
+        )
         self.pr_mentions = self.get_slack_users(client)
         self.merge_commit_sha = utilities.extract_value(payload, ["merge_commit_sha"])
 
@@ -38,6 +40,7 @@ class vars:
                 print(f"Error tagging user with email {email}: {e.response['error']}")
 
         return mention_string
+
 
 # load up class config
 def get_variables(payload, repo, org):

@@ -1,6 +1,7 @@
 import re
 import github_tools
 
+
 def build_slack_message(conf):
     commit_messages = github_tools.get_commit_messages(conf)
     jira_ticket_ids = re.findall(r"\b[A-Z]+-\d+\b", commit_messages)
@@ -67,7 +68,9 @@ def add_blocks(text=None, color=None, buttons=None):
     return attachment
 
 
-def generate_buttons(pr_number, pr_creator, button_approved, button_denied, button_comment):
+def generate_buttons(
+    pr_number, pr_creator, button_approved, button_denied, button_comment
+):
     # Define button
     buttons = [
         {
@@ -87,7 +90,7 @@ def generate_buttons(pr_number, pr_creator, button_approved, button_denied, butt
             "text": {"type": "plain_text", "text": button_comment, "emoji": True},
             "value": button_comment.upper(),
             "action_id": f"{pr_number}-{pr_creator}-com",
-        }
+        },
     ]
 
     return buttons
@@ -107,7 +110,13 @@ def slack_message_data(
     slack_title = create_attachment_block(pretext)
     slack_pr_info = add_attachment_block(pr_info_text, purple_color)
     # Construct the approval button
-    approval_btn = generate_buttons(conf.pr_number, pr_creator, button_approved="Approve", button_denied="Request Changes", button_comment="Comment")
+    approval_btn = generate_buttons(
+        conf.pr_number,
+        pr_creator,
+        button_approved="Approve",
+        button_denied="Request Changes",
+        button_comment="Comment",
+    )
     slack_pr_status = add_blocks("", red_color, approval_btn)
 
     if checking_text:

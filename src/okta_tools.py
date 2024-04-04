@@ -35,8 +35,12 @@ def get_okta_usernames(org, team_slug, okta_token, okta_url, payload):
 
     return assignee_emails
 
+
 def get_okta_info(okta_token, okta_url):
-    headers = {"Authorization": f"SSWS {okta_token}", "content-type": "application/json"}
+    headers = {
+        "Authorization": f"SSWS {okta_token}",
+        "content-type": "application/json",
+    }
     response = requests.post(okta_url, headers=headers)
     response_data = response.json()
     return response_data

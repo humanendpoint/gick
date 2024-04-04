@@ -2,7 +2,7 @@
 
 ### Background
 
-This is actually just created to see how much more useful info and usability you can get out of a GitHub integration with Slack. 
+This is actually just created to see how much more useful info and usability you can get out of a GitHub integration with Slack.
 
 ### Information
 
@@ -24,4 +24,3 @@ Fill in everything in config.yaml and in deployment.yml if you are using GCF
 
 Setup a gcloud function and edit your Slack app for interaction and events  
 Wait for any output!
-
