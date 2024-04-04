@@ -28,4 +28,5 @@ Wait for any output!
 ### Further considerations
 
 Should notify the PR creator that the PR has been approved
+consider other compare sources than Okta
 
