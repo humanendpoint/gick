@@ -25,8 +25,3 @@ Fill in everything in config.yaml and in deployment.yml if you are using GCF
 Setup a gcloud function and edit your Slack app for interaction and events  
 Wait for any output!
 
-### Further considerations
-
-Should notify the PR creator that the PR has been approved
-consider other compare sources than Okta
-
