@@ -1,6 +1,6 @@
 import json
-import utilities, update, build, variables
 from flask import Flask, request, jsonify, Response
+import utilities, update, build, variables
 
 app = Flask(__name__)
 

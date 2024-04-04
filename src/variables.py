@@ -1,7 +1,7 @@
-import utilities, okta_tools
 import os
 from slack_sdk.errors import SlackApiError
 from slack_sdk import WebClient
+import utilities, okta_tools
 
 
 class vars:

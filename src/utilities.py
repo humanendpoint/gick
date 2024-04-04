@@ -1,9 +1,9 @@
 import hmac
 import hashlib
-import github_tools, utilities
 from difflib import SequenceMatcher
 import time
 import re
+import github_tools, utilities
 
 # function to calculate similarity score between two strings
 def similarity_score(a, b):

@@ -1,6 +1,6 @@
-import utilities, review_handling
-import requests
 import os
+import requests
+import utilities, review_handling
 
 def decision_handling(actions, user):            
     decision = utilities.extract_value(actions[0], ["value"])

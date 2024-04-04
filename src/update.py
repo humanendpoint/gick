@@ -1,11 +1,10 @@
 import os
 import json
 import requests
-import utilities, build, review_handling
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
-from datetime import datetime, timedelta, timezone
 from flask import jsonify
+import utilities, build, review_handling
 
 def handle_modal_submit(request):
     payload = json.loads(request.form['payload'])
