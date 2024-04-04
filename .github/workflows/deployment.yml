@@ -1,0 +1,29 @@
+---
+name: Deployment
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy-function:
+    runs-on: ubuntu-latest
+    steps:
+      - name: GCS Auth
+        uses: 'google-github-actions/auth@v2'
+        with:
+          token_format: 'access_token'
+          credentials_json: "${{ secrets.GCP_CREDENTIALS }}"
+      
+      - name: Deploy
+        uses: 'google-github-actions/deploy-cloud-functions@v2'
+        with:
+          name: "github_bot"
+          entry_point: "main"
+          runtime: "python311"
+          source_dir: "./src"
+          env_vars_file: "config.yaml"
+          region: "europe-west4"
+          service_account_email:
+          min_instances: 0
+          max_instances: 2
+          https_trigger_security_level: "secure_always"
