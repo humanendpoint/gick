@@ -67,11 +67,11 @@ def update_slack_message(conf, status, color, timestamp):
 
 
 def find_and_update_slack_message(
-    decision, compare_pr_title, pr_number, color, timestamp
+    decision, pr_title, pr_number, timestamp, color
 ):
     client = WebClient(token=os.environ.get("SLACK_TOKEN"))
     if not find_and_update_slack_message_helper(
-        client, decision, compare_pr_title, pr_number, color, timestamp
+        client, decision, pr_title, pr_number, timestamp, color,
     ):
         print("Message not found or does not match the criteria.")
 
@@ -120,7 +120,7 @@ def handle_comment_button_click(payload_dict):
     return "", 200
 
 
-def update_slack_message_helper(client, conf, status, color, timestamp, pr_title):
+def update_slack_message_helper(client, conf, status, timestamp, pr_title, color):
     response = client.conversations_history(
         channel=conf.channel_id, oldest=timestamp, limit=1, inclusive=True
     )
@@ -166,7 +166,7 @@ def update_slack_message_helper(client, conf, status, color, timestamp, pr_title
 
 
 def find_and_update_slack_message_helper(
-    client, decision, compare_pr_title, pr_number, timestamp, color
+    client, decision, pr_title, pr_number, timestamp, color
 ):
     if color is None:
         color = "#0B6623"
@@ -178,7 +178,7 @@ def find_and_update_slack_message_helper(
         attachments = get_message_attachments(client, message)
         for attachment in attachments:
             for block in attachment.get("blocks", []):
-                if block.get("type") == "section" and compare_pr_title in block.get(
+                if block.get("type") == "section" and pr_title in block.get(
                     "text", {}
                 ).get("text", ""):
                     for inner_attachment in reversed(attachments):
