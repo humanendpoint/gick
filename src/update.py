@@ -19,7 +19,7 @@ def handle_modal_submit(request):
         f"https://api.github.com/repos/{org}/{repo}/pulls/{pr_number}/reviews"
     )
     headers = {"Authorization": f"Bearer {os.environ.get('GITHUB_TOKEN')}"}
-    data = {"body": submission, "event": {}}
+    data = {"body": submission, "event": "COMMENT"}
     response = requests.post(github_comment_url, headers=headers, json=data)
 
     return response
