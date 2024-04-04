@@ -39,7 +39,7 @@ def handle_button_click(request):
     raw_payload = request.form.get("payload")
     payload = json.loads(raw_payload)
     actions = utilities.extract_value(payload, ["actions"])
-    decision, decision_message = review_handling.decision_handling(actions, payload, user)
+    decision, decision_message = review_handling.decision_handling(actions, user)
     pr_title, pr_number, user = utilities.extract_chars(payload)
     if "Merge" or "APPROVE" in decision:
         color = "#0B6623" # green
