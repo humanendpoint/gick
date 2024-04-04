@@ -12,7 +12,7 @@ def handle_modal_submit(request):
     submission = utilities.extract_value(
         payload, ["view", "state", "values", "block_id", "comment_made", "value"]
     )
-    org = os.environ.get("ORG")
+    org = os.environ.get("GITHUB_ORG")
     repo = os.environ.get("REPO")
     pr_number = submission.split("-")[0]
     github_comment_url = (
