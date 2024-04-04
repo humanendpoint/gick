@@ -8,7 +8,7 @@ This is actually just created to see how much more useful info and usability you
 
 ### Features
 
-- When a GitHub PR is created:
+When a GitHub PR is created:
   - we should output a message with `Approve` and `Request Changes` buttons to your channel
   - the message also includes links to the file diffs in the PR.
   - When `Approve` or `Request Changes` is clicked, the buttons change to `Merge`/`Squash`.  
