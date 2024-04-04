@@ -1,4 +1,4 @@
-## GitHub Pull Request Slack bot
+## Bot!
 
 ### Background
 
