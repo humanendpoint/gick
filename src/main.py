@@ -20,8 +20,6 @@ def handle_button_click():
 def main(request):
     """Handling incoming request"""
     try:
-        #if request.content_type == "application/x-www-form-urlencoded":
-        #    handle_button_click(request)
         if request.content_type == "application/json":
             payload_body = request.get_json()
             # Code mainly for handling GitHub webhook payload
