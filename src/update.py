@@ -93,15 +93,15 @@ def get_message_attachments(client, message):
     return []
 
 
-def handle_comment_button_click(payload_dict):
+def handle_comment_button_click(payload):
     # Handle opening comment modal (already implemented)
     client = WebClient(token=os.environ.get("SLACK_TOKEN"))
-    trigger_id = payload_dict["trigger_id"]
+    trigger_id = payload["trigger_id"]
     client.views_open(
         trigger_id=trigger_id,
         view={
             "type": "modal",
-            "title": {"type": "plain_text", "text": "Text Entry"},
+            "title": {"type": "plain_text", "text": "Comment Entry"},
             "submit": {"type": "plain_text", "text": "Submit"},
             "blocks": [
                 {
@@ -168,8 +168,6 @@ def update_slack_message_helper(client, conf, status, timestamp, pr_title, color
 def find_and_update_slack_message_helper(
     client, decision, pr_title, pr_number, timestamp, color
 ):
-    if color is None:
-        color = "#0B6623"
     response = client.conversations_history(
         channel=os.environ.get("CHANNEL_ID"), oldest=timestamp, limit=1, inclusive=True
     )

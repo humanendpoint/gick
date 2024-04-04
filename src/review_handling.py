@@ -32,7 +32,7 @@ def github_decision(decision, actions):
         message = (
             "Approved"
             if response.json().get("state", "") == "APPROVED"
-            else "Changes requested"
+            else "Request Changes"
         )
         return message
     elif decision == "MERGE":
