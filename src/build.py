@@ -12,9 +12,6 @@ def build_slack_message(conf):
     # define text
     pretext = f"Pull request opened by <https://github.com/{conf.pr_user_login}|{conf.pr_user_login}>"
     jira_text = f"*JIRA*: {jira_ticket_ids}"
-    button_approved = "Approve"
-    button_denied = "Request Changes"
-    button_comment = "Comment"
     pending_text = "*Checks*: :processing:"
     # gather up the pr info
     pr_info_text = github_tools.message_building(conf)
@@ -23,13 +20,10 @@ def build_slack_message(conf):
         conf,
         pretext,
         pr_info_text,
-        button_approved,
-        button_denied,
         jira_text,
         pending_text,
         purple_color,
         red_color,
-        button_comment,
     )
 
     return built_message, green_color, yellow_color
@@ -102,19 +96,16 @@ def slack_message_data(
     conf,
     pretext,
     pr_info_text,
-    button_approved,
-    button_denied,
     jira_text,
     checking_text,
     purple_color,
     red_color,
-    button_comment,
 ):
     # build attachment blocks
     slack_title = create_attachment_block(pretext)
     slack_pr_info = add_attachment_block(pr_info_text, purple_color)
     # Construct the approval button
-    approval_btn = generate_buttons(conf.pr_number, button_approved, button_denied, button_comment)
+    approval_btn = generate_buttons(conf.pr_number, button_approved="Approve", button_denied="Request Changes", button_comment="Comment")
     slack_pr_status = add_blocks("", red_color, approval_btn)
 
     if checking_text:
