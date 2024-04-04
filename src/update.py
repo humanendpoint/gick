@@ -171,6 +171,7 @@ def find_and_update_slack_message_helper(client, decision, compare_pr_title, pr_
                                         }
                                     elif text == "Approve":
                                         pr_creator = last_action_element.get("action_id", "")
+                                        pr_creator = pr_creator.split("-")[-1]
                                         inner_attachment["blocks"][blocks.index(block)] = {
                                             "type": "actions",
                                             "elements": build.generate_buttons(pr_number, pr_creator, button_merge="Merge", button_denied="Squash", button_comment="Comment")

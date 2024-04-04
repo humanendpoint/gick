@@ -1,5 +1,5 @@
-import github_tools
 import re
+import github_tools
 
 def build_slack_message(conf):
     commit_messages = github_tools.get_commit_messages(conf)
@@ -24,6 +24,7 @@ def build_slack_message(conf):
         pending_text,
         purple_color,
         red_color,
+        conf.pr_user_login,
     )
 
     return built_message, green_color, yellow_color
@@ -100,12 +101,13 @@ def slack_message_data(
     checking_text,
     purple_color,
     red_color,
+    pr_creator,
 ):
     # build attachment blocks
     slack_title = create_attachment_block(pretext)
     slack_pr_info = add_attachment_block(pr_info_text, purple_color)
     # Construct the approval button
-    approval_btn = generate_buttons(conf.pr_number, button_approved="Approve", button_denied="Request Changes", button_comment="Comment")
+    approval_btn = generate_buttons(conf.pr_number, pr_creator, button_approved="Approve", button_denied="Request Changes", button_comment="Comment")
     slack_pr_status = add_blocks("", red_color, approval_btn)
 
     if checking_text:
