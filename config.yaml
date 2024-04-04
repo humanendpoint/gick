@@ -5,5 +5,5 @@ GITHUB_WEBHOOK_SECRET:
 GITHUB_ORG:
 REPO:
 OKTA_TOKEN:
-OKTA_URL: https://ORG.okta.com/api/v1/groups/ GROUP /users?limit=200
+OKTA_URL: https:// ORG .okta.com/api/v1/groups/ GROUPID /users?limit=200
 SLACK_TOKEN:
