@@ -85,6 +85,14 @@ def send_slack_message(payload, client):
         return None
 
 
+def get_message_attachments(client, message):
+    bot_id = utilities.get_bot_id(client)
+    for attachment in message.get("attachments", []):
+        if attachment.get("bot_id") == bot_id:
+            return attachment.get("blocks", [])
+    return []
+
+
 def handle_comment_button_click(payload_dict):
     # Handle opening comment modal (already implemented)
     client = WebClient(token=os.environ.get("SLACK_TOKEN"))
@@ -110,14 +118,6 @@ def handle_comment_button_click(payload_dict):
         },
     )
     return "", 200
-
-
-def get_message_attachments(client, message):
-    bot_id = utilities.get_bot_id(client)
-    for attachment in message.get("attachments", []):
-        if attachment.get("bot_id") == bot_id:
-            return attachment.get("blocks", [])
-    return []
 
 
 def update_slack_message_helper(client, conf, status, color, timestamp, pr_title):
