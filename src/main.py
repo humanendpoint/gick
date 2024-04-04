@@ -40,12 +40,13 @@ def main(request):
             utilities.verify_signature(payload_body, conf.webhook_secret_token, signature_header)
             if utilities.extract_value(payload_body, ["action"]) == "opened":
                 built_message, green_color, yellow_color = build.build_slack_message(conf)
-                update.send_slack_message(built_message)
+                response = update.send_slack_message(built_message)
+                timestamp = utilities.extract_value(response, ["message", "ts"])
                 status = utilities.wait_for_checks(conf)
-                update.update_slack_message(conf, status, green_color)
+                update.update_slack_message(conf, status, green_color, timestamp)
             elif utilities.extract_value(payload_body, ["action"]) == "closed":
                 decision_message = ":tada: Merged! (via web)"
-                update.find_and_update_slack_message(decision_message, conf.pr_title, conf.pr_number, color)
+                update.find_and_update_slack_message(decision_message, conf.pr_title, conf.pr_number, timestamp, color=None)
             elif utilities.extract_value(payload_body, ["action"]) == "reopened":
                 built_message, green_color, yellow_color = build.build_slack_message(conf)
                 status = utilities.wait_for_checks(conf)
