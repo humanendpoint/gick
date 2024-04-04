@@ -4,7 +4,7 @@ Screenshots soon!
 
 ### Background
 
-This is actually just created to see how much more useful info and usability you can get out of a GitHub integration with Slack.
+This is actually just created to see how much more useful info and usability you can get out of a GitHub integration with Slack, specifically for PRs, and interacting with those.
 
 ### Features
 
