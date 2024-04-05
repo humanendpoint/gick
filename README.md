@@ -18,6 +18,7 @@ When a GitHub PR is created:
   - when `Approve` or `Request Changes` is clicked, the buttons change to `Merge`/`Squash`.  
     - Once either button is clicked at that stage, we replace the buttons with a message that the PR has been merged/squashed.
   - tests for PR check results and waits until runs are done to update the initial message
+  - colorbar changes depending on status (for checks and buttons)
   - more to come!
 
 ### Setup
