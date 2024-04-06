@@ -34,14 +34,14 @@ def handle_button_click(request):
         if action_id.endswith("-com"):
             response = handle_comment_button_click(payload)
         elif action_id.endswith("-app") or action_id.endswith("-den"):
-            response = handle_button_click(payload)
+            response = button_click(payload)
     except SlackApiError as e:
         return jsonify({"error": str(e)}), 500
 
     return response
 
 
-def handle_button_click(request):
+def button_click(request):
     raw_payload = request.form.get("payload")
     payload = json.loads(raw_payload)
     actions = utilities.extract_value(payload, ["actions"])
