@@ -3,9 +3,9 @@ import json
 import utilities, github_tools
 
 
-def get_okta_usernames(org, team_slug, okta_token, okta_url, payload):
+def get_okta_usernames(org, team_slug, okta_token, okta_url, payload, github_token):
     # github users
-    team_users = github_tools.get_team_members(org, team_slug)
+    team_users = github_tools.get_team_members(org, team_slug, github_token)
     # get okta suporg members
     response_data = get_okta_info(okta_token, okta_url)
     # sort the emails from okta
