@@ -5,7 +5,7 @@ import utilities, okta_tools
 
 
 class vars:
-    def __init__(self, client, payload, org, repo):
+    def __init__(self, client, payload, org, repo, github_token):
         self.org = org
         self.repo = repo
         self.channel_id = os.environ.get("CHANNEL_ID")
@@ -13,7 +13,6 @@ class vars:
         self.okta_token = os.environ.get("OKTA_TOKEN")
         self.okta_url = os.environ.get("OKTA_URL")
         self.slack_token = os.environ.get("SLACK_TOKEN")
-        self.github_token = os.environ.get("GITHUB_TOKEN")
         self.webhook_secret_token = os.environ.get("GITHUB_WEBHOOK_SECRET")
         self.pr_user_login = utilities.extract_value(payload, ["assignees"][0]["name"])
         self.pr_url = utilities.extract_value(payload, ["url"])
@@ -21,7 +20,7 @@ class vars:
         self.pr_title = utilities.extract_value(payload, ["title"])
         self.pr_branch = utilities.extract_value(payload, ["head"])
         self.assignee_emails = okta_tools.get_okta_usernames(
-            self.org, self.team_slug, self.okta_token, self.okta_url, payload
+            self.org, self.team_slug, self.okta_token, self.okta_url, payload, github_token
         )
         self.pr_mentions = self.get_slack_users(client)
         self.merge_commit_sha = utilities.extract_value(payload, ["merge_commit_sha"])
@@ -43,7 +42,7 @@ class vars:
 
 
 # load up class config
-def get_variables(payload, repo, org):
+def get_variables(payload, repo, org, github_token):
     """Get confuration from environment variables."""
     client = WebClient(token=os.environ.get("SLACK_TOKEN"))
-    return vars(client, payload, org, repo)
+    return vars(client, payload, org, repo, github_token)
