@@ -2,15 +2,17 @@ import requests
 import os
 import hashlib
 import json
+import jwt
 from graphqlclient import GraphQLClient
+from datetime import datetime, timedelta
 
 
-def message_building(conf):
+def message_building(conf, github_token):
     pr_info_text = ""
     pr_info_text += f"<{conf.pr_url}|#{conf.pr_number} {conf.pr_title}>\n"
     pr_info_text += f"*Reviewers*:\n{conf.pr_mentions}\n\n"
     pr_info_text += "*Files:*\n"
-    pr_files = get_pr_files(conf)
+    pr_files = get_pr_files(conf, github_token)
 
     # Construct clickable links for each file
     for file_path in pr_files:
@@ -24,9 +26,9 @@ def message_building(conf):
     return pr_info_text
 
 
-def github_api_request(conf, endpoint):
+def github_api_request(conf, github_token, endpoint):
     url = f"https://api.github.com/repos/{conf.org}/{endpoint}"
-    headers = {"Authorization": f"token {conf.github_token}"}
+    headers = {"Authorization": f"token {github_token}"}
     response = requests.get(url, headers=headers)
     if response.status_code == 200:
         return response.json()
@@ -35,8 +37,29 @@ def github_api_request(conf, endpoint):
         return None
 
 
-def get_commit_messages(conf):
-    commits = github_api_request(conf, f"/{conf.repo}/pulls/{conf.pr_number}/commits")
+def get_github_token():
+    URL = f"https://api.github.com/app/installations/{os.environ.get("GH_APP_INSTALL_ID")}/access_tokens"
+    issued_at = datetime.utcnow()
+    duration = timedelta(minutes=10)
+    payload = {
+        'iat': issued_at,
+        'exp': issued_at + duration,
+        'iss': os.environ.get("GITHUB_APP_ID"),
+    }
+    with open(os.environ.get("GITHUB_JWT_PEM_KEY"), 'rb') as f:
+        private_key = f.read()
+    jwt_token = jwt.encode(payload, private_key, algorithm='RS256')
+    headers = {
+        'Authorization': f'Bearer {jwt_token}',
+        'Accept': 'application/vnd.github.v3+json'
+    }
+    response = requests.post(URL, headers=headers)
+    access_token = response.json()['token']
+    
+    return access_token
+
+def get_commit_messages(conf, github_token):
+    commits = github_api_request(conf, github_token, f"/{conf.repo}/pulls/{conf.pr_number}/commits")
     if commits:
         commit_messages = [commit["commit"]["message"] for commit in commits]
         return commit_messages
@@ -44,9 +67,9 @@ def get_commit_messages(conf):
         return None
 
 
-def get_pr_checks(conf):
+def get_pr_checks(conf, github_token):
     checks = github_api_request(
-        conf, f"/{conf.repo}/commits/{conf.merge_commit_sha}/check-runs"
+        conf, github_token, f"/{conf.repo}/commits/{conf.merge_commit_sha}/check-runs"
     )
     if checks:
         return checks
@@ -54,9 +77,9 @@ def get_pr_checks(conf):
         return None
 
 
-def get_team_members(conf):
+def get_team_members(conf, github_token):
     team_members = github_api_request(
-        conf, f"/{conf.org}/teams/{conf.team_slug}/members"
+        conf, github_token, f"/{conf.org}/teams/{conf.team_slug}/members"
     )
     if team_members:
         return team_members
@@ -64,9 +87,9 @@ def get_team_members(conf):
         return None
 
 
-async def get_pr_files(conf):
+async def get_pr_files(conf, github_token):
     client = GraphQLClient("https://api.github.com/graphql")
-    client.inject_token(conf.github_token)
+    client.inject_token(github_token)
 
     files = []
     end_cursor = None
