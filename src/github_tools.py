@@ -38,7 +38,7 @@ def github_api_request(conf, github_token, endpoint):
 
 
 def get_github_token():
-    URL = f"https://api.github.com/app/installations/{os.environ.get("GH_APP_INSTALL_ID")}/access_tokens"
+    URL = f"https://api.github.com/app/installations/{os.environ.get('GH_APP_INSTALL_ID')}/access_tokens"
     issued_at = datetime.utcnow()
     duration = timedelta(minutes=10)
     payload = {
