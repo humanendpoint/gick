@@ -2,8 +2,8 @@ import re
 import github_tools
 
 
-def build_slack_message(conf):
-    commit_messages = github_tools.get_commit_messages(conf)
+def build_slack_message(conf, github_token):
+    commit_messages = github_tools.get_commit_messages(conf, github_token)
     jira_ticket_ids = re.findall(r"\b[A-Z]+-\d+\b", commit_messages)
     # hex color values
     red_color = "#ff0000"
@@ -15,7 +15,7 @@ def build_slack_message(conf):
     jira_text = f"*JIRA*: {jira_ticket_ids}"
     pending_text = "*Checks*: :processing:"
     # gather up the pr info
-    pr_info_text = github_tools.message_building(conf)
+    pr_info_text = github_tools.message_building(conf, github_token)
     # build the slack message
     built_message = slack_message_data(
         conf,
