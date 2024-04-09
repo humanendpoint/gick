@@ -38,14 +38,15 @@ def main(request):
             org = utilities.extract_value(payload_body, ["organization"])
             repo = utilities.extract_value(payload_body, ["repository"])
             payload = utilities.extract_value(payload_body, ["pull_request"])
-            conf = variables.get_variables(payload, repo, org)
+            github_token = github_tools.get_github_token() 
+            conf = variables.get_variables(payload, repo, org, github_token)
             signature_header = request.headers.get("X-Hub-Signature-256")
             utilities.verify_signature(
                 payload_body, conf.webhook_secret_token, signature_header
             )
             if utilities.extract_value(payload_body, ["action"]) == "opened":
                 built_message, green_color, yellow_color = build.build_slack_message(
-                    conf
+                    conf, github_token
                 )
                 response = update.send_slack_message(built_message)
                 timestamp = utilities.extract_value(response, ["message", "ts"])
@@ -62,7 +63,7 @@ def main(request):
                 )
             elif utilities.extract_value(payload_body, ["action"]) == "reopened":
                 built_message, green_color, yellow_color = build.build_slack_message(
-                    conf
+                    conf, github_token
                 )
                 status = utilities.wait_for_checks(conf)
                 update.update_slack_message(conf, status, yellow_color)
