@@ -17,6 +17,7 @@ def similarity_score(a, b):
 
 
 def extract_chars(payload):
+    print(f"before extracting characters: {payload}")
     title_matches = r"#\d+ (.+?)>"
     pr_title_match = re.search(title_matches, payload["message"]["attachments"][1]["blocks"][0]["text"]["text"])
     if pr_title_match:

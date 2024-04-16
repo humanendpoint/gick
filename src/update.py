@@ -181,13 +181,11 @@ def find_and_update_slack_message_helper(
     for message in messages:
         attachments = message.get("attachments", [])
         for attachment in attachments:
-            print(f"Checking attachment: {attachment}")
             blocks = attachment.get("blocks", [])
             if blocks:
                 # Update only if there are blocks in the attachment
                 last_block_index = len(blocks) - 1
                 last_block = blocks[last_block_index]
-                print(f"Checking block: {last_block}")
                 if last_block.get("type") == "actions":
                     buttons = last_block.get("elements", [])
                     for button in buttons:

@@ -33,6 +33,7 @@ def github_decision(decision, actions):
         data = {"event": decision}
         data = json.dumps(data)
         url = f"https://api.github.com/repos/{org}/{repo}/pulls/{pull_request_id}/reviews"
+        print(f"GitHub URL: {url}")
         response = requests.post(
             url,
             headers=headers,
