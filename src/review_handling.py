@@ -38,6 +38,8 @@ def github_decision(decision, actions):
             headers=headers,
             data=data,
         )
+        print(f"Response body: {response.text}")
+        print(f"GitHub API response for approved decision: {response}")
         message = (
             "Approved"
             if response.json().get("state", "") == "APPROVED"
@@ -52,6 +54,8 @@ def github_decision(decision, actions):
         response = requests.put(
             merge_url,
             headers=headers,
-            json=data,
+            data=data,
         )
+        print(f"Response body: {response.text}")
+        print(f"GitHub API response for merged decision: {response}")
         return response.json().get("message", "")

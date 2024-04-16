@@ -22,7 +22,7 @@ def extract_chars(payload):
     if pr_title_match:
         pr_title = pr_title_match.group(1)
     else:
-        pr_title = ""
+        pr_title = ""  # Handle the case where no match is found
     pr_number = payload["actions"][0]["action_id"].split("-")[0]
     user_that_clicked = payload["user"]["id"]
 
@@ -30,10 +30,10 @@ def extract_chars(payload):
 
 
 # wait until the github checks are complete
-def wait_for_checks(org, repo, github_token, commit_sha, timeout=90):
+def wait_for_checks(org, repo, github_token, commit_sha, timeout=10):
     start_time = time.time()
     while time.time() - start_time < timeout:
-        time.sleep(5)
+        time.sleep(2)
         print("testing checks...")
         all_checks = github_tools.get_pr_checks(org, repo, github_token, commit_sha)
         if all_checks:
@@ -101,6 +101,8 @@ def verify_signature(payload_body, secret_token, signature_header):
     mac = hmac.new(encoded_key, msg=encoded_payload, digestmod=hashlib.sha256)
     calculated_signature = mac.hexdigest()
     return hmac.compare_digest(calculated_signature, github_signature)
+
+
 
 def get_bot_id(client):
     try:

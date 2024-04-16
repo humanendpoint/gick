@@ -58,7 +58,6 @@ def main(request):
                     repo = utilities.extract_value(payload_body, ["repository", "name"])
                     github_token = github_tools.get_github_token() 
                     conf = variables.get_variables(payload, repo, org, github_token)
-                    print("We got the configuration...")
                     signature_header = request.headers.get("X-Hub-Signature-256")
                     payload_validation = json.dumps(request.get_json())
                     utilities.verify_signature(

@@ -8,7 +8,7 @@ def get_okta_usernames(org, team_slug, okta_token, okta_url, payload, github_tok
     sorted_usernames = github_tools.get_team_members(org, team_slug, github_token)
     # get okta suporg members
     response_data = get_okta_info(okta_token, okta_url)
-    # Sort the emails from Okta
+    # sort the emails from okta
     sorted_emails = sorted(response_data)
     # Match usernames to email addresses based on similarity score
     username_email_map = {}

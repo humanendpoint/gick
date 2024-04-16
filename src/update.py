@@ -44,11 +44,9 @@ def handle_button_click(payload):
             button_click(payload)
 
     except SlackApiError as e:
-        response = jsonify({"error": str(e)}), 500
+        f"{e}", 500
     except Exception as e:
-        response = jsonify({"error": str(e)}), 500
-
-    return "", 200
+        f"{e}", 500
 
 
 def button_click(payload):
@@ -62,7 +60,6 @@ def button_click(payload):
         color = "#ffd500"  # yellow
     find_and_update_slack_message(decision_message, pr_number, timestamp, color)
     # Ensure that the function returns a response
-    return "", 200
 
 
 def update_slack_message(conf, status, color, timestamp):
@@ -72,6 +69,9 @@ def update_slack_message(conf, status, color, timestamp):
         client, timestamp, status, pr_title, color
     ):
         print("Message not found or does not match the criteria.")
+        return "", 403
+    else:
+        return "", 200
 
 
 def find_and_update_slack_message(
@@ -82,6 +82,9 @@ def find_and_update_slack_message(
         client, decision, pr_number, timestamp, color,
     ):
         print("Message not found or does not match the criteria.")
+        return "", 403
+    else:
+        return "", 200
 
 
 def send_slack_message(payload):
@@ -219,15 +222,3 @@ def find_and_update_slack_message_helper(
     }
     client.chat_update(**updated_message)
     return True if attachments else False
-
-
-
-
-
-
-
-
-
-
-
-

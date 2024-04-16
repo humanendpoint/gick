@@ -2,7 +2,6 @@ import os
 from slack_sdk.errors import SlackApiError
 from slack_sdk import WebClient
 import utilities, okta_tools
-import concurrent.futures
 
 class vars:
     def __init__(self, client, payload, org, repo, github_token):
@@ -35,6 +34,7 @@ class vars:
             except SlackApiError as e:
                 print(f"Error tagging user with email {email}: {e.response['error']}")
 
+        print(f"mention string: {mention_string}")
         return mention_string
 
 
