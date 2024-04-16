@@ -28,7 +28,7 @@ def main(request):
                 return response
             else:
                 action = utilities.extract_value(payload_body, ["action"])
-                if skiplist.skipped_action(action):
+                if action in skiplist.SKIPPED_ACTIONS:
                     return "Skipping", 200
                 elif action in approvedlist.APPROVED_ACTIONS:
                     payload = utilities.extract_value(payload_body, ["pull_request"])

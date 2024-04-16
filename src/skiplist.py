@@ -1,4 +1,4 @@
-INVALID_ACTIONS = [
+SKIPPED_ACTIONS = [
     "assigned",
     "auto_merge_disabled",
     "auto_merge_enabled",
@@ -18,6 +18,3 @@ INVALID_ACTIONS = [
     "unlabeled", 
     "unlocked"
 ]
-
-def skipped_action(action):
-    return action in INVALID_ACTIONS
