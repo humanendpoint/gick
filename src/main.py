@@ -19,8 +19,6 @@ def main(request):
         if request.content_type == "application/json":
             payload_body = request.get_json()
             event_type = payload_body.get("type")
-            # Code mainly for handling GitHub webhook payload
-            # but first test if this is a Slack url verification request:
             if event_type == "url_verification":
                 challenge = utilities.extract_value(payload_body, ["challenge"])
                 response_content = json.dumps({"challenge": challenge})
@@ -77,15 +75,14 @@ def main(request):
                         status = utilities.wait_for_checks(conf.org, conf.repo, github_token, conf.merge_commit_sha)
                         update.update_slack_message(conf, status, green_color, timestamp)
                     elif action == "closed":
-                        #decision_message = ":tada: Merged! (via web)"
-                        #update.find_and_update_slack_message(
-                        #    decision_message,
-                        #    conf.pr_title,
-                        #    conf.pr_number,
-                        #    timestamp,
-                        #    color=None,
-                        #)
-                        print("Not doing this yet")
+                        timestamp = utilities.extract_value(response, ["message", "ts"])
+                        decision_message = ":tada: Merged! (via web)"
+                        update.find_and_update_slack_message(
+                            decision_message,
+                            conf.pr_number,
+                            timestamp,
+                            color=None,
+                        )
                     elif action == "reopened":
                         built_message, green_color, yellow_color = build.build_slack_message(
                             conf, conf.repo, conf.pr_number, conf.pr_user_login, conf.channel_id, github_token

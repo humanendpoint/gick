@@ -33,30 +33,37 @@ def github_decision(decision, actions):
         data = {"event": decision}
         data = json.dumps(data)
         url = f"https://api.github.com/repos/{org}/{repo}/pulls/{pull_request_id}/reviews"
-        print(f"GitHub URL: {url}")
-        response = requests.post(
-            url,
-            headers=headers,
-            data=data,
-        )
-        print(f"Response body: {response.text}")
-        print(f"GitHub API response for approved decision: {response}")
-        message = (
-            "Approved"
-            if response.json().get("state", "") == "APPROVED"
-            else "Request Changes"
-        )
-        return message
+        try:
+            response = requests.post(
+                url,
+                headers=headers,
+                data=data,
+            )
+            response.raise_for_status()
+            print(f"GitHub API response for approved decision: {response}")
+            message = (
+                "Approved"
+                if response.json().get("state", "") == "APPROVED"
+                else "Request Changes"
+            )
+            return message
+        except requests.exceptions.RequestException as e:
+            print(f"Error occurred while making the request: {e}")
+            return "Error approving the pull request"
     elif decision == "MERGE":
         decision = decision.lower()
         data = {"merge_method": f"{decision}"}
         data = json.dumps(data)
         merge_url = f"https://api.github.com/repos/{org}/{repo}/pulls/{pull_request_id}/merge"
-        response = requests.put(
-            merge_url,
-            headers=headers,
-            data=data,
-        )
-        print(f"Response body: {response.text}")
-        print(f"GitHub API response for merged decision: {response}")
-        return response.json().get("message", "")
+        try:
+            response = requests.put(
+                merge_url,
+                headers=headers,
+                data=data,
+            )
+            response.raise_for_status()
+            print(f"GitHub API response for merged decision: {response}")
+            return response.json().get("message", "")
+        except requests.exceptions.RequestException as e:
+            print(f"Error occurred while making the request: {e}")
+            return "Error merging the pull request"
