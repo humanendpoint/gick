@@ -2,19 +2,13 @@ import re
 import github_tools
 
 
-<<<<<<< HEAD
 def build_slack_message(conf, repo, pr_number, pr_user_login, channel_id, github_token):
     commit_messages = github_tools.get_commit_messages(conf.org, repo, pr_number, github_token)
     if commit_messages:
-        commit_messages_str = ' '.join(commit_messages)
+        commit_messages_str = ' '.join(commit_messages)  # Join commit messages into a single string
         jira_ticket_ids = re.findall(r"\b[A-Z]+-\d+\b", commit_messages_str)
     else:
         jira_ticket_ids = []
-=======
-def build_slack_message(conf, github_token):
-    commit_messages = github_tools.get_commit_messages(conf, github_token)
-    jira_ticket_ids = re.findall(r"\b[A-Z]+-\d+\b", commit_messages)
->>>>>>> 450fa8d7265af9a1c30d31c791395abdd8964b26
     # hex color values
     red_color = "#ff0000"
     purple_color = "#8A2BE2"
