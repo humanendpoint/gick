@@ -40,7 +40,6 @@ def github_decision(decision, actions):
                 data=data,
             )
             response.raise_for_status()
-            print(f"GitHub API response for approved decision: {response}")
             message = (
                 "Approved"
                 if response.json().get("state", "") == "APPROVED"
@@ -62,7 +61,7 @@ def github_decision(decision, actions):
                 data=data,
             )
             response.raise_for_status()
-            print(f"GitHub API response for merged decision: {response}")
+            print(f"GitHub API response for merged decision: {response.text}")
             return response.json().get("message", "")
         except requests.exceptions.RequestException as e:
             print(f"Error occurred while making the request: {e}")

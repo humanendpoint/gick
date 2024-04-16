@@ -1,5 +1,7 @@
 slack_sdk
-graphqlclient
-flask
+flask<3.0
 requests
 google.cloud
+pyJWT
+google-cloud-secret-manager
+cryptography

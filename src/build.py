@@ -1,4 +1,5 @@
 import re
+import os
 import github_tools
 
 
@@ -22,7 +23,7 @@ def build_slack_message(conf, repo, pr_number, pr_user_login, channel_id, github
     jira_text = f"*JIRA*: {jira_ticket_ids}"
     pending_text = "*Checks*: :processing:"
     # gather up the pr info
-    pr_info_text = github_tools.message_building(conf, github_token)
+    pr_info_text = message_building(conf, github_token)
     # build the slack message
     built_message = slack_message_data(
         channel_id,
@@ -39,6 +40,22 @@ def build_slack_message(conf, repo, pr_number, pr_user_login, channel_id, github
 
     return built_message, green_color, yellow_color
 
+
+def message_building(conf, github_token):
+    pr_info_text = ""
+    pr_info_text += f"<{conf.pr_url}|#{conf.pr_number} {conf.pr_title}>\n"
+    pr_info_text += f"*Reviewers*:\n{conf.pr_mentions}\n\n"
+    pr_info_text += "*Files:*\n"
+    pr_files = github_tools.get_pr_files(conf, github_token)
+
+    # Construct clickable links for each file
+    for file_path in pr_files:
+        file_content_url = github_tools.get_file_content_url(conf, file_path, github_token)
+        if file_content_url:
+            filename = os.path.basename(file_path)
+            pr_info_text += f"<{file_content_url}|{filename}>\n"
+
+    return pr_info_text
 
 def create_attachment_block(text):
     attachment = {"pretext": text}

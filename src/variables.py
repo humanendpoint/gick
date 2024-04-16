@@ -34,7 +34,6 @@ class vars:
             except SlackApiError as e:
                 print(f"Error tagging user with email {email}: {e.response['error']}")
 
-        print(f"mention string: {mention_string}")
         return mention_string
 
 

@@ -1,12 +1,13 @@
 CHANNEL_ID: the Slack channel ID
 GITHUB_TEAM_SLUG: The GitHub team handling your repo (the most common assignees)
-GITHUB_WEBHOOK_SECRET: Self-explanatory
+GITHUB_WEBHOOK_SECRET: Your webhook secret
 ORG: The GitHub org owner name
 REPO: Repo name
 OKTA_TOKEN: API token from Okta
 OKTA_URL: https:// ORG .okta.com/api/v1/groups/ GROUPID /users
 SLACK_TOKEN: API token from Slack
-GH_APP_INSTALL_ID: your GitHub App Install ID
-GITHUB_APP_ID:  your GitHub App ID
+PROJECT_ID: GCP Project name
+GH_APP_INSTALL_ID: Your GitHub App Install ID
+GITHUB_APP_ID:  Your GitHub App ID
 GITHUB_JWT_PEM_KEY: The JWT .pem key
 DOMAIN: the domain after @ in your email address

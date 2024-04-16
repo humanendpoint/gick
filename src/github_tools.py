@@ -5,23 +5,6 @@ from datetime import datetime, timedelta
 from google.cloud import secretmanager
 
 
-def message_building(conf, github_token):
-    pr_info_text = ""
-    pr_info_text += f"<{conf.pr_url}|#{conf.pr_number} {conf.pr_title}>\n"
-    pr_info_text += f"*Reviewers*:\n{conf.pr_mentions}\n<\n"
-    pr_info_text += "*Files:*\n"
-    pr_files = get_pr_files(conf, github_token)
-
-    # Construct clickable links for each file
-    for file_path in pr_files:
-        file_content_url = get_file_content_url(conf, file_path, github_token)
-        if file_content_url:
-            filename = os.path.basename(file_path)
-            pr_info_text += f"<{file_content_url}|{filename}>\n"
-
-    return pr_info_text
-
-
 def github_api_request(github_token, endpoint):
     headers = {"Authorization": f"Bearer {github_token}"}
     response = requests.get(endpoint, headers=headers)
@@ -102,7 +85,6 @@ def get_github_token():
         'exp': issued_at + duration,
         'iss': os.environ.get("GITHUB_APP_ID"),
     }
-    # Use the PEM content directly as the key to sign the JWT
     jwt_token = jwt.encode(payload, pem, algorithm='RS256')
     headers = {
         'Authorization': f'Bearer {jwt_token}',

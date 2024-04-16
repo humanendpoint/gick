@@ -1,3 +1,4 @@
+# always move one from here to approvedlist.py if it's added to functionality
 SKIPPED_ACTIONS = [
     "assigned",
     "auto_merge_disabled",

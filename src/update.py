@@ -206,10 +206,8 @@ def find_and_update_slack_message_helper(
                                     "Comment",
                                 )
                                 last_block["elements"] = new_buttons
-                                print(f"last block updated: {last_block}")
                     attachment["blocks"] = blocks
                     attachment["color"] = color
-                    print(f"Checking attachment: {attachment}")
 
     # Move client.chat_update outside of the loop
     updated_message = {
