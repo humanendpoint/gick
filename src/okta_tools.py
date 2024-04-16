@@ -3,16 +3,13 @@ import json
 import utilities, github_tools
 
 
-def get_okta_usernames(org, team_slug, okta_token, okta_url, payload):
+def get_okta_usernames(org, team_slug, okta_token, okta_url, payload, github_token):
     # github users
-    team_users = github_tools.get_team_members(org, team_slug)
+    sorted_usernames = github_tools.get_team_members(org, team_slug, github_token)
     # get okta suporg members
     response_data = get_okta_info(okta_token, okta_url)
-    # sort the emails from okta
-    sorted_emails = sorted(response_data["values"])
-    # Extract sorted usernames
-    usernames = team_users.split(",")
-    sorted_usernames = sorted(usernames, key=str.lower)
+    # Sort the emails from Okta
+    sorted_emails = sorted(response_data)
     # Match usernames to email addresses based on similarity score
     username_email_map = {}
     for username in sorted_usernames:
@@ -27,8 +24,7 @@ def get_okta_usernames(org, team_slug, okta_token, okta_url, payload):
             username_email_map[username] = best_email
 
     # Extract assignees and match with emails using mapping dictionary
-    assignees_output = utilities.extract_values(payload, ["assignees"])
-    assignees = json.loads(assignees_output)["assignees"]
+    assignees = payload.get("assignees", [])
     login_list = [assignee["login"] for assignee in assignees]
     # Retrieve emails corresponding to assignees using mapping dictionary
     assignee_emails = [username_email_map.get(login) for login in login_list]
@@ -41,6 +37,7 @@ def get_okta_info(okta_token, okta_url):
         "Authorization": f"SSWS {okta_token}",
         "content-type": "application/json",
     }
-    response = requests.post(okta_url, headers=headers)
+    response = requests.get(okta_url, headers=headers)
     response_data = response.json()
-    return response_data
+    emails = [user['profile']['email'] for user in response_data]
+    return emails

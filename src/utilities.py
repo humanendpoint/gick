@@ -4,7 +4,12 @@ from difflib import SequenceMatcher
 import time
 import re
 import github_tools, utilities
+import json
 
+class SignatureVerificationError(Exception):
+    def __init__(self, status_code, detail):
+        self.status_code = status_code
+        self.detail = detail
 
 # function to calculate similarity score between two strings
 def similarity_score(a, b):
@@ -13,22 +18,24 @@ def similarity_score(a, b):
 
 def extract_chars(payload):
     title_matches = r"#\d+ (.+?)>"
-    pr_title_match = re.findall(title_matches, payload)
-    pr_title = pr_title_match[0]
-
-    user_that_clicked = utilities.extract_value(payload, ["user", "id"])
-
-    button_id_fetch = utilities.extract_value(payload, ["actions", "action_id"])
-    pr_number = button_id_fetch.split("-")[0]
+    pr_title_match = re.search(title_matches, payload["message"]["attachments"][1]["blocks"][0]["text"]["text"])
+    if pr_title_match:
+        pr_title = pr_title_match.group(1)
+    else:
+        pr_title = ""
+    pr_number = payload["actions"][0]["action_id"].split("-")[0]
+    user_that_clicked = payload["user"]["id"]
 
     return pr_title, pr_number, user_that_clicked
 
 
 # wait until the github checks are complete
-def wait_for_checks(conf):
-    while True:
-        time.sleep(2)
-        all_checks = github_tools.get_pr_checks(conf)
+def wait_for_checks(org, repo, github_token, commit_sha, timeout=90):
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        time.sleep(5)
+        print("testing checks...")
+        all_checks = github_tools.get_pr_checks(org, repo, github_token, commit_sha)
         if all_checks:
             if are_checks_completed(all_checks["check_runs"]):
                 if are_checks_successful(all_checks["check_runs"]):
@@ -37,6 +44,10 @@ def wait_for_checks(conf):
                 else:
                     status = ":red-cross-mark:"
                     return status
+    # If the timeout is reached
+    print("Timeout reached while waiting for checks to complete.")
+    status = "Timeout"
+    return status
 
 
 def are_checks_completed(check_runs):
@@ -81,17 +92,15 @@ def verify_signature(payload_body, secret_token, signature_header):
         secret_token: GitHub app webhook token (WEBHOOK_SECRET)
         signature_header: header received from GitHub (x-hub-signature-256)
     """
+    print("Verifying signature.")
     if not signature_header:
-        raise Exception(
-            status_code=403, detail="x-hub-signature-256 header is missing!"
-        )
-    hash_object = hmac.new(
-        secret_token.encode("utf-8"), msg=payload_body, digestmod=hashlib.sha256
-    )
-    expected_signature = "sha256=" + hash_object.hexdigest()
-    if not hmac.compare_digest(expected_signature, signature_header):
-        raise Exception(status_code=403, detail="Request signatures didn't match!")
-
+        raise SignatureVerificationError(403, detail="x-hub-signature-256 header is missing!")
+    _, github_signature = signature_header.split('=', 1)
+    encoded_key = bytes(secret_token, 'utf-8')
+    encoded_payload = payload_body.encode('utf-8')
+    mac = hmac.new(encoded_key, msg=encoded_payload, digestmod=hashlib.sha256)
+    calculated_signature = mac.hexdigest()
+    return hmac.compare_digest(calculated_signature, github_signature)
 
 def get_bot_id(client):
     try:

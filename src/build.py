@@ -2,30 +2,39 @@ import re
 import github_tools
 
 
-def build_slack_message(conf):
-    commit_messages = github_tools.get_commit_messages(conf)
-    jira_ticket_ids = re.findall(r"\b[A-Z]+-\d+\b", commit_messages)
+def build_slack_message(conf, repo, pr_number, pr_user_login, channel_id, github_token):
+    commit_messages = github_tools.get_commit_messages(conf.org, repo, pr_number, github_token)
+    if commit_messages:
+        commit_messages_str = ' '.join(commit_messages)
+        jira_ticket_ids = re.findall(r"\b[A-Z]+-\d+\b", commit_messages_str)
+    else:
+        jira_ticket_ids = []
     # hex color values
     red_color = "#ff0000"
     purple_color = "#8A2BE2"
     green_color = "#0B6623"
     yellow_color = "#ffd500"
     # define text
-    pretext = f"Pull request opened by <https://github.com/{conf.pr_user_login}|{conf.pr_user_login}>"
+    if "github-actions[bot]" in pr_user_login:
+        pretext = f"Pull request opened by <https://github.com/features/actions|{conf.pr_user_login}>"
+    else:
+        pretext = f"Pull request opened by <https://github.com/{conf.pr_user_login}|{conf.pr_user_login}>"
     jira_text = f"*JIRA*: {jira_ticket_ids}"
     pending_text = "*Checks*: :processing:"
     # gather up the pr info
-    pr_info_text = github_tools.message_building(conf)
+    pr_info_text = github_tools.message_building(conf, github_token)
     # build the slack message
     built_message = slack_message_data(
-        conf,
+        channel_id,
         pretext,
         pr_info_text,
         jira_text,
         pending_text,
         purple_color,
         red_color,
-        conf.pr_user_login,
+        pr_user_login,
+        pr_number,
+        jira_ticket_ids
     )
 
     return built_message, green_color, yellow_color
@@ -97,7 +106,7 @@ def generate_buttons(
 
 
 def slack_message_data(
-    conf,
+    channel_id,
     pretext,
     pr_info_text,
     jira_text,
@@ -105,13 +114,15 @@ def slack_message_data(
     purple_color,
     red_color,
     pr_creator,
+    pr_number,
+    jira_ticket_id,
 ):
     # build attachment blocks
     slack_title = create_attachment_block(pretext)
     slack_pr_info = add_attachment_block(pr_info_text, purple_color)
     # Construct the approval button
     approval_btn = generate_buttons(
-        conf.pr_number,
+        pr_number,
         pr_creator,
         button_approved="Approve",
         button_denied="Request Changes",
@@ -124,13 +135,13 @@ def slack_message_data(
         slack_pr_info["blocks"].extend(slack_updated_status["blocks"])
 
     # If there's a JIRA ticket, add JIRA section
-    if conf.jira_ticket_id:
+    if jira_ticket_id:
         slack_jira_link = add_blocks(jira_text, purple_color)
         slack_pr_info["blocks"].extend(slack_jira_link["blocks"])
 
     # concatenate all the blocks
     built_slack_message = {
-        "channel": conf.channel_id,
+        "channel": channel_id,
         "attachments": [slack_title, slack_pr_info, slack_pr_status],
     }
 

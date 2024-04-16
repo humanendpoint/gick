@@ -2,3 +2,4 @@ slack_sdk
 graphqlclient
 flask
 requests
+google.cloud

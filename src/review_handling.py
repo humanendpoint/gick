@@ -1,12 +1,13 @@
 import os
 import requests
-import utilities, review_handling
+import github_tools
+import json
 
 
 def decision_handling(actions, user):
-    decision = utilities.extract_value(actions[0], ["value"])
+    decision = actions[0]["value"]
     decision_message = ""
-    decision, message = review_handling.github_decision(decision, actions)
+    message = github_decision(decision, actions)
     if decision == "REQUEST_CHANGES":
         decision_message = ":warning:" + message + f"by <@{user}>!"
     elif decision == "MERGE":
@@ -18,17 +19,25 @@ def decision_handling(actions, user):
 
 
 def github_decision(decision, actions):
-    action_id = utilities.extract_value(actions[0], ["action_id"])
-    pull_request_id = action_id[:-2]
-    headers = {"Authorization": f"token {os.environ.get('GITHUB_TOKEN')}"}
+    action_id = actions[0]["action_id"]
+    pull_request_id = action_id.split("-")[0]
+    github_token = github_tools.get_github_token()
+    org = os.environ.get('ORG')
+    repo = os.environ.get('REPO')
+    headers = {
+        "Authorization": f"Bearer {github_token}", 
+        "Accept": "application/vnd.github+json", 
+        "X-GitHub-Api-Version": "2022-11-28"
+    }
     if decision == "APPROVE":
-        data = {"event": f"{decision}"}
+        data = {"event": decision}
+        data = json.dumps(data)
+        url = f"https://api.github.com/repos/{org}/{repo}/pulls/{pull_request_id}/reviews"
         response = requests.post(
-            f"https://api.github.com/repos/{os.environ.get('ORG')}/{os.environ.get('REPO')}/pulls/{pull_request_id}/reviews",
+            url,
             headers=headers,
             data=data,
         )
-        print(f"GitHub API response for approved decision: {response}")
         message = (
             "Approved"
             if response.json().get("state", "") == "APPROVED"
@@ -36,12 +45,13 @@ def github_decision(decision, actions):
         )
         return message
     elif decision == "MERGE":
-        decision.lower()
+        decision = decision.lower()
         data = {"merge_method": f"{decision}"}
-        response = requests.post(
-            f"https://api.github.com/repos/{os.environ.get('ORG')}/{os.environ.get('REPO')}/pulls/{pull_request_id}/merge",
+        data = json.dumps(data)
+        merge_url = f"https://api.github.com/repos/{org}/{repo}/pulls/{pull_request_id}/merge"
+        response = requests.put(
+            merge_url,
             headers=headers,
-            data=data,
+            json=data,
         )
-        print(f"GitHub API response for merged decision: {response}")
         return response.json().get("message", "")
