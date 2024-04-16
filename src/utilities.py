@@ -3,8 +3,7 @@ import hashlib
 from difflib import SequenceMatcher
 import time
 import re
-import github_tools, utilities
-import json
+import github_tools
 
 class SignatureVerificationError(Exception):
     def __init__(self, status_code, detail):
@@ -34,7 +33,6 @@ def wait_for_checks(org, repo, github_token, commit_sha, timeout=10):
     start_time = time.time()
     while time.time() - start_time < timeout:
         time.sleep(2)
-        print("testing checks...")
         all_checks = github_tools.get_pr_checks(org, repo, github_token, commit_sha)
         if all_checks:
             if are_checks_completed(all_checks["check_runs"]):

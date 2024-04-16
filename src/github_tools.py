@@ -8,13 +8,12 @@ from google.cloud import secretmanager
 def message_building(conf, github_token):
     pr_info_text = ""
     pr_info_text += f"<{conf.pr_url}|#{conf.pr_number} {conf.pr_title}>\n"
-    pr_info_text += f"*Reviewers*:\n{conf.pr_mentions}\n\n"
+    pr_info_text += f"*Reviewers*:\n{conf.pr_mentions}\n<\n"
     pr_info_text += "*Files:*\n"
     pr_files = get_pr_files(conf, github_token)
 
     # Construct clickable links for each file
     for file_path in pr_files:
-        print(f"testing {pr_files}")
         file_content_url = get_file_content_url(conf, file_path, github_token)
         if file_content_url:
             filename = os.path.basename(file_path)
@@ -38,7 +37,6 @@ def get_pr_files(conf, github_token):
     files_data = github_api_request(
         github_token, f"https://api.github.com/repos/{conf.org}/{conf.repo}/pulls/{conf.pr_number}/files"
     )
-    print(f"pr file response: {files_data}")
     if files_data:
         pr_files = [file_data["filename"] for file_data in files_data]
         return pr_files
@@ -54,7 +52,6 @@ def get_file_content_url(conf, file_path, github_token):
         for file_data in files_data:
             if file_data["filename"] == file_path:
                 diff_url = f"{conf.pr_url}/files#diff-{file_data['sha']}"
-                print(f"diff url: {diff_url}")
                 return diff_url
         print(f"File {file_path} not found in pull request {conf.pr_number}")
     else:
@@ -63,11 +60,9 @@ def get_file_content_url(conf, file_path, github_token):
 
 def get_commit_messages(org, repo, pr_number, github_token):
     commits = github_api_request(github_token, f"https://api.github.com/repos/{org}/{repo}/pulls/{pr_number}/commits")
-    print(f"commits: {commits}")
     if commits:
         if isinstance(commits, list):
             commit_messages = [commit["commit"]["message"] for commit in commits]
-            print(f"commit messages: {commit_messages}")
         return commit_messages
     else:
         return None
@@ -77,7 +72,6 @@ def get_pr_checks(org, repo, github_token, commit_sha):
     checks = github_api_request(
         github_token, f"https://api.github.com/repos/{org}/{repo}/commits/{commit_sha}/check-runs"
     )
-    print(f"checks result: {checks}")
     if checks:
         return checks
     else:
@@ -88,7 +82,6 @@ def get_team_members(org, team_slug, github_token):
     team_members = github_api_request(
         github_token, f"https://api.github.com/orgs/{org}/teams/{team_slug}/members"
     )
-    print(f"team members: {team_members}")
     if team_members:
         return sorted([member["login"] for member in team_members], key=str.lower)
     else:
@@ -117,5 +110,5 @@ def get_github_token():
     }
     response = requests.post(URL, headers=headers)
     access_token = response.json()['token']
-    print("We got a GitHub token...")
+    print("Got a GitHub token.")
     return access_token

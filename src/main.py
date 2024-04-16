@@ -1,6 +1,6 @@
 import json
-from flask import jsonify, Response
-import utilities, update, build, variables, github_tools
+from flask import Response
+import utilities, update, build, variables, github_tools, skiplist, approvedlist
 
 def main(request):
     """Handling incoming request"""
@@ -9,7 +9,6 @@ def main(request):
             raw_payload = request.form.get("payload")
             payload_body = json.loads(raw_payload)
             event_type = payload_body.get("type")
-            print(f"payload body: {payload_body}")
             if event_type == "interactive_message":
                 update.handle_button_click(payload_body)
             elif event_type == "block_actions":
@@ -29,28 +28,9 @@ def main(request):
                 return response
             else:
                 action = utilities.extract_value(payload_body, ["action"])
-                if action in [
-                    "assigned",
-                    "auto_merge_disabled",
-                    "auto merge_enabled",
-                    "unassigned", 
-                    "converted_to_draft", 
-                    "milestoned",
-                    "demilestoned", 
-                    "dequeued", 
-                    "edited", 
-                    "enqueued", 
-                    "labeled", 
-                    "locked", 
-                    "ready_for_review", 
-                    "review_request_removed", 
-                    "review_requested",
-                    "synchronized", 
-                    "unlabeled", 
-                    "unlocked"
-                ]:
+                if skiplist.skipped_action(action):
                     return "Skipping", 200
-                elif action in ["opened", "closed", "reopened"]:
+                elif action in approvedlist.APPROVED_ACTIONS:
                     payload = utilities.extract_value(payload_body, ["pull_request"])
                     org = utilities.extract_value(payload_body, ["organization", "login"])
                     repo = utilities.extract_value(payload_body, ["repository", "name"])
