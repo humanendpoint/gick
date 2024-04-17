@@ -157,7 +157,7 @@ def update_assignees(pr_title, assignees):
                 if block.get("type") == "section" and pr_title in block.get("text", {}).get("text", ""):
                     # Update the reviewers' section
                     block_text = block["text"]["text"]
-                    reviewers_match = re.search(r'\*Reviewers\*:(.*?)\n\n', block_text, re.DOTALL)
+                    reviewers_match = re.search(r'<@(.*?)>', block_text, re.DOTALL)
                     new_block_text = block_text.replace(reviewers_match, assignees)
                     block["text"]["text"] = new_block_text
 
