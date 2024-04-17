@@ -1,8 +1,9 @@
 import os
+import re
 import requests
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
-from flask import jsonify
+from datetime import datetime, timedelta, timezone
 import utilities, build, review_handling, github_tools
 
 
@@ -31,7 +32,7 @@ def handle_modal_submit(payload):
         print(f"GitHub response: {response}")
         return "", 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return f"{e}"
 
 
 
@@ -60,7 +61,7 @@ def button_click(payload):
         color = "#ffd500"  # yellow
     find_and_update_slack_message(decision_message, pr_number, timestamp, color)
     # Ensure that the function returns a response
-
+    return "", 200
 
 def update_slack_message(conf, status, color, timestamp):
     client = WebClient(token=conf.slack_token)
@@ -99,15 +100,15 @@ def send_slack_message(payload):
 
 def handle_comment_button_click(payload, action_id):
     try:
+        print(f"comment button payload: {payload}")
         client = WebClient(token=os.environ.get("SLACK_TOKEN"))
         trigger_id = payload["trigger_id"]
-        print(f"Trigger ID: {trigger_id}")
         pr_id = action_id.split("-")[0]
         response = client.views_open(
             trigger_id=trigger_id,
             view={
                 "type": "modal",
-                "title": {"type": "plain_text", "text": "Comment Entry"},
+                "title": {"type": "plain_text", "text": "PR Comment Entry"},
                 "submit": {"type": "plain_text", "text": "Submit"},
                 "blocks": [
                     {
@@ -117,8 +118,12 @@ def handle_comment_button_click(payload, action_id):
                             "type": "plain_text_input",
                             "action_id": pr_id,
                             "multiline": True,
+                			"placeholder": {
+					            "type": "plain_text",
+					            "text": "This will post as the registered GitHub App for PR output."
+				            }
                         },
-                        "label": {"type": "plain_text", "text": "Enter your comment"},
+                        "label": {"type": "plain_text", "text": "Enter your comment to add to the PR:"},
                     }
                 ],
             },
@@ -128,11 +133,41 @@ def handle_comment_button_click(payload, action_id):
         if response["ok"]:
             return "", 200
         else:
-            return jsonify({"error": response["error"]}), 500
+            return response["error"]
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return f"{e}"
 
+def update_assignees(pr_title, assignees):
+    client = WebClient(token=os.environ.get("SLACK_TOKEN"))
+    current_datetime_utc = datetime.now(timezone.utc)
+    forty_eight_hours_ago_utc = current_datetime_utc - timedelta(hours=48)
+    # Fetch conversation history from the channel within the specified time range
+    response = client.conversations_history(
+        channel=os.environ.get("CHANNEL_ID"),
+        oldest=forty_eight_hours_ago_utc.timestamp(),
+        latest=current_datetime_utc.timestamp(),
+    )
+    messages = response.get("messages", [])
+    for message in messages:
+        attachments = message.get("attachments", [])
+        for attachment in attachments:
+            blocks = attachment.get("blocks", [])
+            for block in blocks:
+                # Check if the block is of type "section" and contains the PR title
+                if block.get("type") == "section" and pr_title in block.get("text", {}).get("text", ""):
+                    # Update the reviewers' section
+                    block_text = block["text"]["text"]
+                    reviewers_match = re.search(r'\*Reviewers\*:(.*?)\n\n', block_text, re.DOTALL)
+                    new_block_text = block_text.replace(reviewers_match, assignees)
+                    block["text"]["text"] = new_block_text
 
+                    # Send the modified message back to Slack
+                    client.chat_update(
+                        channel=os.environ.get("CHANNEL_ID"),
+                        ts=message["ts"],
+                        text=message.get("text", ""),
+                        attachments=attachments
+                    )
 
 
 def update_slack_message_helper(client, timestamp, status, pr_title, color):
@@ -192,10 +227,14 @@ def find_and_update_slack_message_helper(
                         if button.get("type") == "button":
                             text = button.get("text", {}).get("text", "")
                             if text in ["Merge", "Squash"]:
-                                blocks[last_block_index] = {
-                                    "type": "context",
-                                    "elements": [{"type": "mrkdwn", "text": decision}],
-                                }
+                                new_block = [
+                                    {
+                                        "type": "mrkdwn", 
+                                        "text": decision
+                                    }
+                                ]
+                                last_block["type"] = "context"
+                                last_block["elements"] = new_block
                             elif text == "Approve":
                                 pr_creator = button.get("action_id", "").split("-")[1]
                                 new_buttons = build.generate_buttons(

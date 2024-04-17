@@ -22,6 +22,7 @@ def build_slack_message(conf, repo, pr_number, pr_user_login, channel_id, github
         pretext = f"Pull request opened by <https://github.com/{conf.pr_user_login}|{conf.pr_user_login}>"
     jira_text = f"*JIRA*: {jira_ticket_ids}"
     pending_text = "*Checks*: :processing:"
+    org_and_repo = f":github: {conf.org}/{repo}"
     # gather up the pr info
     pr_info_text = message_building(conf, github_token)
     # build the slack message
@@ -35,7 +36,8 @@ def build_slack_message(conf, repo, pr_number, pr_user_login, channel_id, github
         red_color,
         pr_user_login,
         pr_number,
-        jira_ticket_ids
+        jira_ticket_ids,
+        org_and_repo,
     )
 
     return built_message, green_color, yellow_color
@@ -133,6 +135,7 @@ def slack_message_data(
     pr_creator,
     pr_number,
     jira_ticket_id,
+    org_and_repo,
 ):
     # build attachment blocks
     slack_title = create_attachment_block(pretext)
@@ -156,6 +159,9 @@ def slack_message_data(
         slack_jira_link = add_blocks(jira_text, purple_color)
         slack_pr_info["blocks"].extend(slack_jira_link["blocks"])
 
+    if org_and_repo:
+        org_and_repo = add_blocks(org_and_repo, purple_color)
+        slack_pr_info["blocks"].extend(slack_updated_status["blocks"])
     # concatenate all the blocks
     built_slack_message = {
         "channel": channel_id,

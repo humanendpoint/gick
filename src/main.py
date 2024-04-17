@@ -42,8 +42,8 @@ def main(request):
                         payload_validation, conf.webhook_secret_token, signature_header
                     )
                     print("Verified the signature.")
-                    if any(title in payload_body.get("pull_request", {}).get("title", "") for title in ["munki apps", "[skip ci] Serial"]):
-                        print("Doing nothing, this is a skipped webhook")
+                    if any(title in payload_body.get("pull_request", {}).get("title", "") for title in skiplist.SKIPPED_TITLES):
+                        print("Doing nothing, this is a skipped PR title")
                         return "Skipping", 200
                     if action == "opened":
                         print("Building the slack message...")
@@ -55,21 +55,26 @@ def main(request):
                         status = utilities.wait_for_checks(conf.org, conf.repo, github_token, conf.merge_commit_sha)
                         update.update_slack_message(conf, status, green_color, timestamp)
                     elif action == "closed":
-                        timestamp = utilities.extract_value(response, ["message", "ts"])
-                        decision_message = ":tada: Merged! (via web)"
-                        update.find_and_update_slack_message(
-                            decision_message,
-                            conf.pr_number,
-                            timestamp,
-                            color=None,
-                        )
+                        #timestamp = None
+                        #decision_message = ":tada: Merged! (via web)"
+                        #update.find_and_update_slack_message(
+                        #    decision_message,
+                        #    conf.pr_number,
+                        #    timestamp,
+                        #    color=None,
+                        #)
+                        print("Not doing this yet.")
                     elif action == "reopened":
-                        built_message, green_color, yellow_color = build.build_slack_message(
-                            conf, conf.repo, conf.pr_number, conf.pr_user_login, conf.channel_id, github_token
-                        )
-                        status = utilities.wait_for_checks(conf, github_token)
-                        update.update_slack_message(conf, status, yellow_color)
-                    return "Processed", 200
+                        #built_message, green_color, yellow_color = build.build_slack_message(
+                        #    conf, conf.repo, conf.pr_number, conf.pr_user_login, conf.channel_id, github_token
+                        #)
+                        #status = utilities.wait_for_checks(conf, github_token)
+                        #update.update_slack_message(conf, status, yellow_color)
+                        print("Not doing this yet.")
+                    elif action == "assigned":
+                        pr_title = utilities.extract_value(payload, ["title"])
+                        update.update_assignees(pr_title, conf.pr_mentions)
+                    return "", 200
                 else:
                     print("Did not find an actionable action, skipping.")
                     return "Processed, skipping", 200
