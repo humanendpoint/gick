@@ -39,7 +39,6 @@ def handle_modal_submit(payload):
 def handle_button_click(payload):
     try:
         action_id = payload["actions"][0]["action_id"]
-        print(f"the action ID is: {action_id}")
         if action_id.endswith("-com"):
             handle_comment_button_click(payload, action_id)
         elif action_id.endswith("-app") or action_id.endswith("-den"):
@@ -56,10 +55,6 @@ def button_click(payload):
     timestamp = utilities.extract_value(payload, ["message", "ts"])
     pr_title, pr_number, user = utilities.extract_chars(payload)
     decision, decision_message = review_handling.decision_handling(actions, user)
-    print(f"decision: {decision}")
-    print(f"decision message: {decision_message}")
-    print(f"timestamp: {timestamp}")
-    print(f"pr_title: {pr_title}, pr number: {pr_number}, user: {user}")
     if "MERGE" in decision or "APPROVE" in decision:
         color = "#0B6623"  # green
     elif "Squash" in decision or "REQUEST_CHANGES" in decision:
@@ -244,7 +239,6 @@ def find_and_update_slack_message_helper(
                     for button in buttons:
                         if button.get("type") == "button":
                             text = button.get("text", {}).get("text", "")
-                            print(f"text match: {text}")
                             if text == "Merge":
                                 new_block = [
                                     {
@@ -255,7 +249,8 @@ def find_and_update_slack_message_helper(
                                 last_block.pop("elements", None)
                                 last_block["type"] = "context"
                                 last_block["elements"] = new_block
-                                print(f"last merge block updated: {last_block}")
+                                attachment.pop("color", None)
+                                attachment.pop("fallback", None)
                             elif text == "Approve":
                                 pr_creator = button.get("action_id", "").split("-")[1]
                                 new_buttons = build.generate_buttons(
@@ -266,10 +261,8 @@ def find_and_update_slack_message_helper(
                                     button_comment="Comment",
                                 )
                                 last_block["elements"] = new_buttons
-                                print(f"last approve block updated: {last_block}")
                     attachment["blocks"] = blocks
                     attachment["color"] = color
-                    print(f"final attachment: {attachment}")
 
     # Move client.chat_update outside of the loop
     updated_message = {

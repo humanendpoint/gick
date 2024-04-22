@@ -55,11 +55,12 @@ def main(request):
                         status = utilities.wait_for_checks(conf.org, conf.repo, github_token, conf.merge_commit_sha)
                         update.update_slack_message(conf, status, green_color, timestamp)
                     elif action == "closed":
-                        decision_message = ":tada: Merged! (via web)"
-                        update.update_on_closed(
-                            conf.pr_title,
-                            decision_message
-                        )
+                        #decision_message = ":tada: Merged! (via web)"
+                        #update.update_on_closed(
+                        #    conf.pr_title,
+                        #    decision_message
+                        #)
+                        print("Not doing this yet.")
                     elif action == "reopened":
                         #built_message, green_color, yellow_color = build.build_slack_message(
                         #    conf, conf.repo, conf.pr_number, conf.pr_user_login, conf.channel_id, github_token
