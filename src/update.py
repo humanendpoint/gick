@@ -66,26 +66,26 @@ def button_click(payload):
 def update_slack_message(conf, status, color, timestamp):
     client = WebClient(token=conf.slack_token)
     pr_title = conf.pr_title
-    if not update_slack_message_helper(
-        client, timestamp, status, pr_title, color
-    ):
-        print("Message not found or does not match the criteria.")
-        return "", 403
-    else:
-        return ""
+    try:
+        response = update_slack_message_helper(
+            client, timestamp, status, pr_title, color
+        )
+        print(f"Slack response: {response}")
+    except Exception as e:
+        print(f"Error updating Slack message: {e}")
 
 
 def find_and_update_slack_message(
     decision, pr_number, timestamp, color
 ):
     client = WebClient(token=os.environ.get("SLACK_TOKEN"))
-    if not find_and_update_slack_message_helper(
-        client, decision, pr_number, timestamp, color,
-    ):
-        print("Message not found or does not match the criteria.")
-        return "", 403
-    else:
-        return ""
+    try:
+        response = find_and_update_slack_message_helper(
+            client, decision, pr_number, timestamp, color,
+        )
+        print(f"Slack response: {response}")
+    except Exception as e:
+        print(f"Error updating Slack message: {e}")
 
 
 def send_slack_message(payload):
@@ -215,8 +215,6 @@ def update_slack_message_helper(client, timestamp, status, pr_title, color):
                                     }
                                     # Send the updated message
                                     client.chat_update(**updated_message)
-                                    return True
-    return False
 
 
 def find_and_update_slack_message_helper(
@@ -272,4 +270,3 @@ def find_and_update_slack_message_helper(
         "attachments": attachments,
     }
     client.chat_update(**updated_message)
-    return True if attachments else False
