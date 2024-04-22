@@ -55,15 +55,11 @@ def main(request):
                         status = utilities.wait_for_checks(conf.org, conf.repo, github_token, conf.merge_commit_sha)
                         update.update_slack_message(conf, status, green_color, timestamp)
                     elif action == "closed":
-                        #timestamp = None
-                        #decision_message = ":tada: Merged! (via web)"
-                        #update.find_and_update_slack_message(
-                        #    decision_message,
-                        #    conf.pr_number,
-                        #    timestamp,
-                        #    color=None,
-                        #)
-                        print("Not doing this yet.")
+                        decision_message = ":tada: Merged! (via web)"
+                        update.update_on_closed(
+                            conf.pr_title,
+                            decision_message
+                        )
                     elif action == "reopened":
                         #built_message, green_color, yellow_color = build.build_slack_message(
                         #    conf, conf.repo, conf.pr_number, conf.pr_user_login, conf.channel_id, github_token
@@ -71,9 +67,6 @@ def main(request):
                         #status = utilities.wait_for_checks(conf, github_token)
                         #update.update_slack_message(conf, status, yellow_color)
                         print("Not doing this yet.")
-                    elif action == "assigned":
-                        pr_title = utilities.extract_value(payload, ["title"])
-                        update.update_assignees(pr_title, conf.pr_mentions)
                     return "", 200
                 else:
                     print("Did not find an actionable action, skipping.")

@@ -9,9 +9,9 @@ def decision_handling(actions, user):
     decision_message = ""
     message = github_decision(decision, actions)
     if decision == "REQUEST_CHANGES":
-        decision_message = ":warning:" + message + f"by <@{user}>!"
+        decision_message = ":warning: " + message + f" by <@{user}>!"
     elif decision == "MERGE":
-        decision_message = ":tada:" + message + f"(by {user})"
+        decision_message = ":tada: " + message + f" (by <@{user}>)"
     elif decision == "SQUASH":
         decision_message = ":red-cross-mark: Squashed!"
 
