@@ -1,6 +1,7 @@
 import requests
 import os
 import jwt
+import hashlib
 from datetime import datetime, timedelta
 from google.cloud import secretmanager
 
@@ -34,7 +35,9 @@ def get_file_content_url(conf, file_path, github_token):
     if files_data:
         for file_data in files_data:
             if file_data["filename"] == file_path:
-                diff_url = f"{conf.pr_url}/files#diff-{file_data['sha']}"
+                file_path_bytes = file_path.encode('utf-8')
+                file_sha = hashlib.sha256(file_path_bytes).hexdigest()
+                diff_url = f"{conf.pr_url}/files#diff-{file_sha}"
                 return diff_url
         print(f"File {file_path} not found in pull request {conf.pr_number}")
     else:

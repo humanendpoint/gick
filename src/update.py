@@ -71,6 +71,7 @@ def update_slack_message(conf, status, color, timestamp):
             client, timestamp, status, pr_title, color
         )
         print(f"Slack response: {response}")
+        return ""
     except Exception as e:
         print(f"Error updating Slack message: {e}")
 
@@ -84,6 +85,7 @@ def find_and_update_slack_message(
             client, decision, pr_number, timestamp, color,
         )
         print(f"Slack response: {response}")
+        return ""
     except Exception as e:
         print(f"Error updating Slack message: {e}")
 
