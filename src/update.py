@@ -39,6 +39,7 @@ def handle_modal_submit(payload):
 def handle_button_click(payload):
     try:
         action_id = payload["actions"][0]["action_id"]
+        print(f"the action ID is: {action_id}")
         if action_id.endswith("-com"):
             handle_comment_button_click(payload, action_id)
         elif action_id.endswith("-app") or action_id.endswith("-den"):
@@ -55,13 +56,17 @@ def button_click(payload):
     timestamp = utilities.extract_value(payload, ["message", "ts"])
     pr_title, pr_number, user = utilities.extract_chars(payload)
     decision, decision_message = review_handling.decision_handling(actions, user)
-    if "Merge" in decision or "APPROVE" in decision:
+    print(f"decision: {decision}")
+    print(f"decision message: {decision_message}")
+    print(f"timestamp: {timestamp}")
+    print(f"pr_title: {pr_title}, pr number: {pr_number}, user: {user}")
+    if "MERGE" in decision or "APPROVE" in decision:
         color = "#0B6623"  # green
     elif "Squash" in decision or "REQUEST_CHANGES" in decision:
         color = "#ffd500"  # yellow
     find_and_update_slack_message(decision_message, pr_number, timestamp, color)
     # Ensure that the function returns a response
-    return "", 200
+    return ""
 
 def update_slack_message(conf, status, color, timestamp):
     client = WebClient(token=conf.slack_token)
@@ -72,7 +77,7 @@ def update_slack_message(conf, status, color, timestamp):
         print("Message not found or does not match the criteria.")
         return "", 403
     else:
-        return "", 200
+        return ""
 
 
 def find_and_update_slack_message(
@@ -85,7 +90,7 @@ def find_and_update_slack_message(
         print("Message not found or does not match the criteria.")
         return "", 403
     else:
-        return "", 200
+        return ""
 
 
 def send_slack_message(payload):
@@ -131,13 +136,13 @@ def handle_comment_button_click(payload, action_id):
         print(f"Response from views_open: {response}")
         # Check if the views_open request was successful
         if response["ok"]:
-            return "", 200
+            return ""
         else:
             return response["error"]
     except Exception as e:
         return f"{e}"
 
-def update_assignees(pr_title, assignees):
+def update_on_closed(pr_title, decision_message):
     client = WebClient(token=os.environ.get("SLACK_TOKEN"))
     current_datetime_utc = datetime.now(timezone.utc)
     forty_eight_hours_ago_utc = current_datetime_utc - timedelta(hours=48)
@@ -155,20 +160,33 @@ def update_assignees(pr_title, assignees):
             for block in blocks:
                 # Check if the block is of type "section" and contains the PR title
                 if block.get("type") == "section" and pr_title in block.get("text", {}).get("text", ""):
-                    # Update the reviewers' section
-                    block_text = block["text"]["text"]
-                    reviewers_match = re.search(r'<@(.*?)>', block_text, re.DOTALL)
-                    new_block_text = block_text.replace(reviewers_match, assignees)
-                    block["text"]["text"] = new_block_text
+                    # Update only if there are blocks in the attachment
+                    last_block_index = len(blocks) - 1
+                    last_block = blocks[last_block_index]
+                    if last_block.get("type") == "actions":
+                        buttons = last_block.get("elements", [])
+                        for button in buttons:
+                            if button.get("type") == "button":
+                                text = button.get("text", {}).get("text", "")
+                                if text in ["Merge", "Approve"]:
+                                    new_block = [
+                                        {
+                                            "type": "mrkdwn", 
+                                            "text": decision_message
+                                        }
+                                    ]
+                                    last_block["type"] = "context"
+                                    last_block["elements"] = new_block
+                        attachment["blocks"] = blocks
 
-                    # Send the modified message back to Slack
-                    client.chat_update(
-                        channel=os.environ.get("CHANNEL_ID"),
-                        ts=message["ts"],
-                        text=message.get("text", ""),
-                        attachments=attachments
-                    )
-
+    updated_message = {
+        "channel": os.environ.get("CHANNEL_ID"),
+        "ts": message["ts"],
+        "as_user": True,
+        "attachments": attachments,
+    }
+    # Send the modified message back to Slack
+    client.chat_update(**updated_message)
 
 def update_slack_message_helper(client, timestamp, status, pr_title, color):
     response = client.conversations_history(
@@ -226,27 +244,32 @@ def find_and_update_slack_message_helper(
                     for button in buttons:
                         if button.get("type") == "button":
                             text = button.get("text", {}).get("text", "")
-                            if text in ["Merge", "Squash"]:
+                            print(f"text match: {text}")
+                            if text == "Merge":
                                 new_block = [
                                     {
                                         "type": "mrkdwn", 
                                         "text": decision
                                     }
                                 ]
+                                last_block.pop("elements", None)
                                 last_block["type"] = "context"
                                 last_block["elements"] = new_block
+                                print(f"last merge block updated: {last_block}")
                             elif text == "Approve":
                                 pr_creator = button.get("action_id", "").split("-")[1]
                                 new_buttons = build.generate_buttons(
                                     pr_number,
                                     pr_creator,
-                                    "Merge",
-                                    "Request Changes",
-                                    "Comment",
+                                    button_approved="Merge",
+                                    button_denied="Squash",
+                                    button_comment="Comment",
                                 )
                                 last_block["elements"] = new_buttons
+                                print(f"last approve block updated: {last_block}")
                     attachment["blocks"] = blocks
                     attachment["color"] = color
+                    print(f"final attachment: {attachment}")
 
     # Move client.chat_update outside of the loop
     updated_message = {
