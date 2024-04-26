@@ -14,15 +14,22 @@ class vars:
         self.slack_token = os.environ.get("SLACK_TOKEN")
         self.webhook_secret_token = os.environ.get("GITHUB_WEBHOOK_SECRET")
         self.pr_user_login = payload.get("user", {}).get("login", "")
-        self.pr_url = utilities.extract_value(payload, ["url"])
+        self.pr_url = utilities.extract_value(payload, ["html_url"])
         self.pr_number = utilities.extract_value(payload, ["number"])
         self.pr_title = utilities.extract_value(payload, ["title"])
         self.pr_branch = utilities.extract_value(payload, ["head", "ref"])
-        self.assignee_emails = okta_tools.get_okta_usernames(
+        self.assignee_emails = self.get_assignee_emails() or okta_tools.get_okta_usernames(
             self.org, self.team_slug, self.okta_token, self.okta_url, payload, github_token
         )
         self.pr_mentions = self.get_slack_users(client)
         self.merge_commit_sha = utilities.extract_value(payload, ["head", "sha"])
+
+    def get_assignee_emails(self):
+        secret_value = os.environ.get("ASSIGNEE_EMAILS")
+        if secret_value:
+            return secret_value.strip().split()
+        else:
+            return None 
 
     def get_slack_users(self, client):
         mention_string = ""

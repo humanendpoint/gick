@@ -2,6 +2,7 @@ import re
 import os
 import github_tools
 
+MAX_MESSAGE_LENGTH = 4000
 
 def build_slack_message(conf, repo, pr_number, pr_user_login, channel_id, github_token):
     commit_messages = github_tools.get_commit_messages(conf.org, repo, pr_number, github_token)
@@ -39,10 +40,63 @@ def build_slack_message(conf, repo, pr_number, pr_user_login, channel_id, github
         jira_ticket_ids,
         org_and_repo,
     )
+    dm_pr_info_text = private_message_building(conf, github_token)
+    built_dm = generate_priv_message(
+        pr_number, 
+        pr_user_login, 
+        dm_pr_info_text, 
+        purple_color,
+    )
 
-    return built_message, green_color, yellow_color
+    return built_dm, built_message, green_color, yellow_color
 
 
+def private_message_building(conf, github_token):
+    diff_url = f"https://api.github.com/repos/{conf.org}/{conf.repo}/pulls/{conf.pr_number}"
+    dm_pr_info_text = ""
+    dm_pr_info_text += f"<{conf.pr_url}|#{conf.pr_number} {conf.pr_title}>\n"
+    dm_pr_info_text += f"*Created by:* {conf.pr_user_login}\n"
+    dm_pr_info_text += f"*All assignees:* {conf.pr_mentions}\n\n"
+    diff_content = github_tools.get_diff_content(diff_url, github_token)
+    if diff_content:
+        diff_message = construct_diff_msg(diff_content)
+        if len(dm_pr_info_text) + len(diff_message) > MAX_MESSAGE_LENGTH:
+            dm_pr_info_text += "*PR Diffs:*\nMessage exceeds character limit. "
+            dm_pr_info_text += f"<{conf.pr_url}|Link to PR>"
+        else:
+            dm_pr_info_text += "*PR Diffs:*\n" + diff_message
+
+    return dm_pr_info_text
+
+
+def construct_diff_msg(payload):
+    lines = payload.split("\n")
+    formatted_diff = ""
+    current_file = None
+    for line in lines:
+        if line.startswith("diff --git"):
+            if current_file:
+                formatted_diff += "```\n"
+            filename = line.split(" b/")[-1]
+            formatted_diff += f"Diff for file: {filename}\n```\n"
+            current_file = filename
+            continue
+        if current_file:
+            if line.startswith("+++ ") or line.startswith("--- "):
+                continue
+            elif line.startswith("index ") or line.startswith("new file ") or line.startswith("deleted file "):
+                continue
+            elif line.startswith(" ") or line.startswith("+") or line.startswith("-"):
+                if line.startswith(" "):
+                    formatted_diff += f"  {line.strip()}\n"
+                elif line.startswith("+"):
+                    formatted_diff += f"+ {line.strip()}\n"
+                elif line.startswith("-"):
+                    formatted_diff += f"- {line.strip()}\n"
+    if current_file:
+        formatted_diff += "```\n"
+    return formatted_diff
+    
 def message_building(conf, github_token):
     pr_info_text = ""
     pr_info_text += f"<{conf.pr_url}|#{conf.pr_number} {conf.pr_title}>\n"
@@ -58,6 +112,7 @@ def message_building(conf, github_token):
             pr_info_text += f"<{file_content_url}|{filename}>\n"
 
     return pr_info_text
+
 
 def create_attachment_block(text):
     attachment = {"pretext": text}
@@ -96,8 +151,24 @@ def add_blocks(text=None, color=None, buttons=None):
     return attachment
 
 
-def generate_buttons(
-    pr_number, pr_creator, button_approved, button_denied, button_comment
+def generate_button(
+    pr_number, pr_creator, button_comment
+):
+    # Define button
+    button = [
+        {
+            "type": "button",
+            "text": {"type": "plain_text", "text": button_comment, "emoji": True},
+            "value": button_comment.upper(),
+            "action_id": f"{pr_number}-{pr_creator}-com",
+        },
+    ]
+
+    return button
+
+
+def generate_private_buttons(
+    pr_number, pr_creator, button_approved, button_denied
 ):
     # Define button
     buttons = [
@@ -112,12 +183,6 @@ def generate_buttons(
             "text": {"type": "plain_text", "text": button_denied, "emoji": True},
             "value": button_denied.upper().replace(" ", "_"),
             "action_id": f"{pr_number}-{pr_creator}-den",
-        },
-        {
-            "type": "button",
-            "text": {"type": "plain_text", "text": button_comment, "emoji": True},
-            "value": button_comment.upper(),
-            "action_id": f"{pr_number}-{pr_creator}-com",
         },
     ]
 
@@ -141,14 +206,12 @@ def slack_message_data(
     slack_title = create_attachment_block(pretext)
     slack_pr_info = add_attachment_block(pr_info_text, purple_color)
     # Construct the approval button
-    approval_btn = generate_buttons(
+    comment_btn = generate_button(
         pr_number,
         pr_creator,
-        button_approved="Approve",
-        button_denied="Request Changes",
         button_comment="Comment",
     )
-    slack_pr_status = add_blocks("", red_color, approval_btn)
+    slack_pr_status = add_blocks("", red_color, comment_btn)
 
     if checking_text:
         slack_updated_status = add_blocks(checking_text, purple_color)
@@ -161,7 +224,7 @@ def slack_message_data(
 
     if org_and_repo:
         org_and_repo = add_blocks(org_and_repo, purple_color)
-        slack_pr_info["blocks"].extend(slack_updated_status["blocks"])
+        slack_pr_info["blocks"].extend(org_and_repo["blocks"])
     # concatenate all the blocks
     built_slack_message = {
         "channel": channel_id,
@@ -169,3 +232,21 @@ def slack_message_data(
     }
 
     return built_slack_message
+
+
+def generate_priv_message(pr_number, pr_creator, pr_info_text, purple_color):
+    title_text = create_attachment_block("A new :github: GitHub PR assigned to you:")
+    pr_info = add_attachment_block(pr_info_text, purple_color)
+    approval_btns = generate_private_buttons(
+        pr_number,
+        pr_creator,
+        button_approved="Approve",
+        button_denied="Request Changes",
+    )
+    created_buttons = add_blocks("", purple_color, approval_btns)
+    pr_info["blocks"].extend(created_buttons["blocks"])
+    built_dm_message = {
+        "attachments": [title_text, pr_info],
+    }
+
+    return built_dm_message

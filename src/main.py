@@ -1,4 +1,5 @@
 import json
+import os
 from flask import Response
 import utilities, update, build, variables, github_tools, skiplist, approvedlist
 
@@ -43,17 +44,26 @@ def main(request):
                     )
                     print("Verified the signature.")
                     if any(title in payload_body.get("pull_request", {}).get("title", "") for title in skiplist.SKIPPED_TITLES):
-                        print("Doing nothing, this is a skipped PR title")
                         return "Skipping", 200
                     if action == "opened":
-                        print("Building the slack message...")
-                        built_message, green_color, yellow_color = build.build_slack_message(
-                            conf, conf.repo, conf.pr_number, conf.pr_user_login, conf.channel_id, github_token
-                        )
-                        response = update.send_slack_message(built_message)
-                        timestamp = utilities.extract_value(response, ["message", "ts"])
-                        status = utilities.wait_for_checks(conf.org, conf.repo, github_token, conf.merge_commit_sha)
-                        update.update_slack_message(conf, status, green_color, timestamp)
+                        try:
+                            built_dm, built_message, green_color, yellow_color = build.build_slack_message(
+                                conf, conf.repo, conf.pr_number, conf.pr_user_login, conf.channel_id, github_token
+                            )
+                            response = update.send_slack_message(built_message)
+                            timestamp = utilities.extract_value(response, ["message", "ts"])
+                            status = utilities.wait_for_checks(conf.org, conf.repo, github_token, conf.merge_commit_sha)
+                            if "Passing" in status:
+                                color = green_color
+                            else:
+                                color = yellow_color
+                            update.update_slack_message(conf, status, color, timestamp)
+                            dm_assignee = conf.pr_mentions.replace("<@", "").replace(">", "").split()
+                            for assignee in dm_assignee:
+                                print(f"Sending private message to {assignee}")
+                                update.send_slack_message(built_dm, assignee)
+                        except Exception as e:
+                            print(f"We have an error: {e}")
                     elif action == "closed":
                         #decision_message = ":tada: Merged! (via web)"
                         #update.update_on_closed(

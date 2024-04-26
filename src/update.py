@@ -59,38 +59,50 @@ def button_click(payload):
         color = "#0B6623"  # green
     elif "Squash" in decision or "REQUEST_CHANGES" in decision:
         color = "#ffd500"  # yellow
-    find_and_update_slack_message(decision_message, pr_number, timestamp, color)
-    # Ensure that the function returns a response
-    return ""
+    assignee_clicked = payload["user"]["id"]
+    assignees = re.findall(r"<@(.*?)>", payload["message"]["text"])
+    if assignee_clicked in assignees:
+        direct_msg_channel = payload["channel"]["id"]
+        find_and_update_slack_message(decision_message, pr_number, timestamp, color, direct_msg_channel)
+        if "MERGE" in decision:
+            pr_channel = os.environ.get("CHANNEL_ID")
+            update_chan_on_merge(decision_message, timestamp, pr_channel)
+    else:
+        if "APPROVE" in decision:
+            for assignee in assignees:
+                if assignee != assignee_clicked:
+                    find_and_remove_slack_message(timestamp, assignee)
+
 
 def update_slack_message(conf, status, color, timestamp):
     client = WebClient(token=conf.slack_token)
     pr_title = conf.pr_title
     try:
-        response = update_slack_message_helper(
+        update_slack_message_helper(
             client, timestamp, status, pr_title, color
         )
-        print(f"Slack response: {response}")
-        return ""
     except Exception as e:
         print(f"Error updating Slack message: {e}")
 
 
 def find_and_update_slack_message(
-    decision, pr_number, timestamp, color
+    decision, pr_number, timestamp, color, channel
 ):
     client = WebClient(token=os.environ.get("SLACK_TOKEN"))
     try:
-        response = find_and_update_slack_message_helper(
-            client, decision, pr_number, timestamp, color,
+        find_and_update_slack_message_helper(
+            client, decision, pr_number, timestamp, color, channel
         )
-        print(f"Slack response: {response}")
-        return ""
+
     except Exception as e:
         print(f"Error updating Slack message: {e}")
 
 
-def send_slack_message(payload):
+def send_slack_message(payload, channel=None):
+    channel_id = payload.get("channel")
+    if not channel_id:
+        if channel:
+            payload["channel"] = channel
     client = WebClient(token=os.environ.get("SLACK_TOKEN"))
     try:
         response = client.chat_postMessage(**payload)
@@ -122,7 +134,7 @@ def handle_comment_button_click(payload, action_id):
                             "multiline": True,
                 			"placeholder": {
 					            "type": "plain_text",
-					            "text": "This will post as the registered GitHub App for PR output."
+					            "text": "This will comment as your registered GitHub App for PR output."
 				            }
                         },
                         "label": {"type": "plain_text", "text": "Enter your comment to add to the PR:"},
@@ -138,6 +150,7 @@ def handle_comment_button_click(payload, action_id):
             return response["error"]
     except Exception as e:
         return f"{e}"
+
 
 def update_on_closed(pr_title, decision_message):
     client = WebClient(token=os.environ.get("SLACK_TOKEN"))
@@ -176,14 +189,34 @@ def update_on_closed(pr_title, decision_message):
                                     last_block["elements"] = new_block
                         attachment["blocks"] = blocks
 
-    updated_message = {
-        "channel": os.environ.get("CHANNEL_ID"),
-        "ts": message["ts"],
-        "as_user": True,
-        "attachments": attachments,
-    }
-    # Send the modified message back to Slack
-    client.chat_update(**updated_message)
+                        updated_message = {
+                            "channel": os.environ.get("CHANNEL_ID"),
+                            "ts": message["ts"],
+                            "as_user": True,
+                            "attachments": attachments,
+                        }
+                        # Send the modified message back to Slack
+                        client.chat_update(**updated_message)
+                    else:
+                        print("No need to update message, already merged.")
+
+
+def find_and_remove_slack_message(timestamp, user_id):
+    client = WebClient(token=os.environ.get("SLACK_TOKEN"))
+    try:
+        response = client.conversations_history(
+            channel=user_id,
+            latest=timestamp,
+            limit=1,
+            inclusive=True
+        )
+        messages = response.get("messages", [])
+        for message in messages:
+            # Delete the message
+            client.chat_delete(channel=user_id, ts=message["ts"])
+    except Exception as e:
+        print(f"Error removing Slack message for user {user_id}: {e}")
+
 
 def update_slack_message_helper(client, timestamp, status, pr_title, color):
     response = client.conversations_history(
@@ -209,21 +242,65 @@ def update_slack_message_helper(client, timestamp, status, pr_title, color):
                                     element["text"] = f"*Checks*: {status}"
                                     # Update the attachment color
                                     attachment["color"] = color
-                                    # Prepare the updated message payload
-                                    updated_message = {
-                                        "channel": os.environ.get("CHANNEL_ID"),
-                                        "ts": message["ts"],
-                                        "attachments": attachments,
+                    # Prepare the updated message payload
+                    updated_message = {
+                        "channel": os.environ.get("CHANNEL_ID"),
+                        "ts": message["ts"],
+                        "attachments": attachments,
+                    }
+                    # Send the updated message
+                    client.chat_update(**updated_message)
+
+
+def update_chan_on_merge(
+    decision, timestamp, channel
+):
+    client = WebClient(token=os.environ.get("SLACK_TOKEN"))
+    response = client.conversations_history(
+        channel=channel, oldest=timestamp, limit=1, inclusive=True
+    )
+    messages = response.get("messages", [])
+    for message in messages:
+        attachments = message.get("attachments", [])
+        for attachment in attachments:
+            blocks = attachment.get("blocks", [])
+            if blocks:
+                # Update only if there are blocks in the attachment
+                last_block_index = len(blocks) - 1
+                last_block = blocks[last_block_index]
+                if last_block.get("type") == "actions":
+                    buttons = last_block.get("elements", [])
+                    for button in buttons:
+                        if button.get("type") == "button":
+                            text = button.get("text", {}).get("text", "")
+                            if text == "Comment":
+                                new_block = [
+                                    {
+                                        "type": "mrkdwn", 
+                                        "text": decision
                                     }
-                                    # Send the updated message
-                                    client.chat_update(**updated_message)
+                                ]
+                                last_block.pop("elements", None)
+                                last_block["type"] = "context"
+                                last_block["elements"] = new_block
+                                attachment.pop("color", None)
+                                attachment.pop("fallback", None)
+                    attachment["blocks"] = blocks
+
+    updated_message = {
+        "channel": channel,
+        "ts": timestamp,
+        "as_user": True,
+        "attachments": attachments,
+    }
+    client.chat_update(**updated_message)
 
 
 def find_and_update_slack_message_helper(
-    client, decision, pr_number, timestamp, color
+    client, decision, pr_number, timestamp, color, channel
 ):
     response = client.conversations_history(
-        channel=os.environ.get("CHANNEL_ID"), oldest=timestamp, limit=1, inclusive=True
+        channel=channel, oldest=timestamp, limit=1, inclusive=True
     )
     messages = response.get("messages", [])
     for message in messages:
@@ -253,12 +330,11 @@ def find_and_update_slack_message_helper(
                                 attachment.pop("fallback", None)
                             elif text == "Approve":
                                 pr_creator = button.get("action_id", "").split("-")[1]
-                                new_buttons = build.generate_buttons(
+                                new_buttons = build.generate_private_buttons(
                                     pr_number,
                                     pr_creator,
                                     button_approved="Merge",
                                     button_denied="Squash",
-                                    button_comment="Comment",
                                 )
                                 last_block["elements"] = new_buttons
                     attachment["blocks"] = blocks
@@ -266,7 +342,7 @@ def find_and_update_slack_message_helper(
 
     # Move client.chat_update outside of the loop
     updated_message = {
-        "channel": os.environ.get("CHANNEL_ID"),
+        "channel": channel,
         "ts": timestamp,
         "as_user": True,
         "attachments": attachments,

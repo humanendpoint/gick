@@ -7,7 +7,7 @@ import json
 def decision_handling(actions, user):
     decision = actions[0]["value"]
     decision_message = ""
-    message = github_decision(decision, actions)
+    message = github_decision(decision, actions, user)
     if decision == "REQUEST_CHANGES":
         decision_message = ":warning: " + message + f" by <@{user}>!"
     elif decision == "MERGE":
@@ -18,7 +18,7 @@ def decision_handling(actions, user):
     return decision, decision_message
 
 
-def github_decision(decision, actions):
+def github_decision(decision, actions, assignee):
     action_id = actions[0]["action_id"]
     pull_request_id = action_id.split("-")[0]
     github_token = github_tools.get_github_token()
@@ -30,7 +30,7 @@ def github_decision(decision, actions):
         "X-GitHub-Api-Version": "2022-11-28"
     }
     if decision == "APPROVE":
-        data = {"event": decision}
+        data = {"event": decision, "body": f"approval by {assignee}"}
         data = json.dumps(data)
         url = f"https://api.github.com/repos/{org}/{repo}/pulls/{pull_request_id}/reviews"
         try:

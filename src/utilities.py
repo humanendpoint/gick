@@ -99,17 +99,3 @@ def verify_signature(payload_body, secret_token, signature_header):
     mac = hmac.new(encoded_key, msg=encoded_payload, digestmod=hashlib.sha256)
     calculated_signature = mac.hexdigest()
     return hmac.compare_digest(calculated_signature, github_signature)
-
-
-
-def get_bot_id(client):
-    try:
-        response = client.auth_test()
-        if response["ok"]:
-            return response["bot_id"]
-        else:
-            print("Failed to get bot ID:", response["error"])
-            return None
-    except Exception as e:
-        print("Error occurred:", e)
-        return None
