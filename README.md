@@ -5,7 +5,7 @@ Screenshots soon!
 ### Background
 
 Created to see how much more useful info and usability you can get out of a GitHub integration with Slack, specifically for PRs, and interacting with those.
-I will probably add more features here once this is confirmed working properly.
+Still in progress, but the features below are what's working right now.
 
 ### Features
 
