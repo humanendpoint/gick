@@ -4,21 +4,25 @@ Screenshots soon!
 
 ### Background
 
-This is actually just created to see how much more useful info and usability you can get out of a GitHub integration with Slack, specifically for PRs, and interacting with those.
+Created to see how much more useful info and usability you can get out of a GitHub integration with Slack, specifically for PRs, and interacting with those.
 I will probably add more features here once this is confirmed working properly.
 
 ### Features
 
 When a GitHub PR is created:
-  - we should output a message with `Approve` and `Request Changes` buttons to your channel
-    - Assigned users tagged by Slack ID (approx match GH user vs Okta email)
-    - includes links to the file diffs in the PR
-    - kinda sorta imitates the official integration output design
+In DM:
+  - we send a DM with `Approve` and `Request Changes` buttons to the assignee
+  - includes the changes in the message if less than 4k characters
+In the channel:
+  - kinda sorta imitates the official integration output design
+  - assigned users tagged by Slack ID (approx match GH user vs Okta email unless a `ASSIGNEE_EMAILS` secret exists in GCP)
+  - includes links to the file diffs in the PR
   - includes a comment button (like the official integration)
-  - when `Approve` or `Request Changes` is clicked, the buttons change to `Merge`/`Squash`.  
-    - Once either button is clicked at that stage, we replace the buttons with a message that the PR has been merged/squashed.
   - tests for PR check results and waits until runs are done to update the initial message
   - colorbar changes depending on status (for checks and buttons)
+In DM:
+  - when `Approve` or `Request Changes` is clicked, the buttons change to `Merge`/`Squash`.  
+    - Once either button is clicked at that stage, we replace the buttons with a message that the PR has been merged/squashed, in both DM and channel.
   - more to come!
 
 ### Setup
