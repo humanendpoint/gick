@@ -4,7 +4,8 @@ Screenshots soon!
 
 ### Background
 
-Created to see how much more useful info and usability you can get out of a GitHub integration with Slack, specifically for PRs, and interacting with those.
+Created to see how much more useful info and usability you can get out of a GitHub integration with Slack, specifically for PRs, and interacting with those. This uses GitHub webhooks for PRs, which is very chatty, so bear that in mind before setting this up under an org on a private repo.  
+
 Still in progress, but the features below are what's working right now.
 
 ### Features
