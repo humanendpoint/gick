@@ -17,25 +17,6 @@ def github_api_request(github_token, endpoint):
         return None
 
 
-#def add_comment_on_merge(merger):
-#    org = os.environ.get("ORG")
-#    repo = os.environ.get("REPO")
-#    submission = f"Merged by {merger}"
-#    submission_with_commenter = f"{submission}<br><br><br><sub>Comment added by gick-app</sub>"
-#    github_token = github_tools.get_github_token()
-#    github_comment_url = (
-#        f"https://api.github.com/repos/{org}/{repo}/pulls/{pr_number}/reviews"
-#    )
-#    headers = {
-#        "Authorization": f"Bearer {github_token}", 
-#        "Accept": "application/vnd.github+json", 
-#        "X-GitHub-Api-Version": "2022-11-28"
-#    }
-#    data = {"body": submission_with_commenter, "event": "COMMENT"}
-#    response = requests.post(github_comment_url, headers=headers, json=data)
-#
-#    return response
-
 def get_pr_files(conf, github_token):
     # Use the GitHub API to get the list of files in the pull request
     files_data = github_api_request(
