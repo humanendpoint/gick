@@ -19,3 +19,6 @@ SKIPPED_ACTIONS = [
     "unlabeled", 
     "unlocked"
 ]
+
+SKIPPED_TITLES = [
+]
