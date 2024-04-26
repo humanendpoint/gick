@@ -9,10 +9,12 @@ I will probably add more features here once this is confirmed working properly.
 
 ### Features
 
-When a GitHub PR is created:
+When a GitHub PR is created:  
+  
 In DM:
   - we send a DM with `Approve` and `Request Changes` buttons to the assignee
   - includes the changes in the message if less than 4k characters
+
 In the channel:
   - kinda sorta imitates the official integration output design
   - assigned users tagged by Slack ID (approx match GH user vs Okta email unless a `ASSIGNEE_EMAILS` secret exists in GCP)
@@ -20,6 +22,7 @@ In the channel:
   - includes a comment button (like the official integration)
   - tests for PR check results and waits until runs are done to update the initial message
   - colorbar changes depending on status (for checks and buttons)
+
 In DM:
   - when `Approve` or `Request Changes` is clicked, the buttons change to `Merge`/`Squash`.  
     - Once either button is clicked at that stage, we replace the buttons with a message that the PR has been merged/squashed, in both DM and channel.
