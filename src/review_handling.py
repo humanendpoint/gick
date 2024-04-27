@@ -30,7 +30,7 @@ def github_decision(decision, actions, assignee):
         "X-GitHub-Api-Version": "2022-11-28"
     }
     if decision == "APPROVE":
-        data = {"event": decision, "body": f"approval by {assignee}"}
+        data = {"event": decision, "body": f"approved from Slack by {assignee}"}
         data = json.dumps(data)
         url = f"https://api.github.com/repos/{org}/{repo}/pulls/{pull_request_id}/reviews"
         try:
