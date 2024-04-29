@@ -4,10 +4,15 @@ import github_tools
 
 MAX_MESSAGE_LENGTH = 4000
 
+
 def build_slack_message(conf, repo, pr_number, pr_user_login, channel_id, github_token):
-    commit_messages = github_tools.get_commit_messages(conf.org, repo, pr_number, github_token)
+    commit_messages = github_tools.get_commit_messages(
+        conf.org, repo, pr_number, github_token
+    )
     if commit_messages:
-        commit_messages_str = ' '.join(commit_messages)  # Join commit messages into a single string
+        commit_messages_str = " ".join(
+            commit_messages
+        )  # Join commit messages into a single string
         jira_ticket_ids = re.findall(r"\b[A-Z]+-\d+\b", commit_messages_str)
     else:
         jira_ticket_ids = []
@@ -21,7 +26,7 @@ def build_slack_message(conf, repo, pr_number, pr_user_login, channel_id, github
         pretext = f"Pull request opened by <https://github.com/features/actions|{conf.pr_user_login}>"
     else:
         pretext = f"Pull request opened by <https://github.com/{conf.pr_user_login}|{conf.pr_user_login}>"
-    jira_text = f"*JIRA*: {jira_ticket_ids}"
+    jira_text = f"*JIRA*: {jira_ticket_ids[0]}"
     pending_text = "*Checks*: :processing:"
     org_and_repo = f":github: {conf.org}/{repo}"
     # gather up the pr info
@@ -42,9 +47,9 @@ def build_slack_message(conf, repo, pr_number, pr_user_login, channel_id, github
     )
     dm_pr_info_text = private_message_building(conf, github_token)
     built_dm = generate_priv_message(
-        pr_number, 
-        pr_user_login, 
-        dm_pr_info_text, 
+        pr_number,
+        pr_user_login,
+        dm_pr_info_text,
         purple_color,
     )
 
@@ -52,7 +57,9 @@ def build_slack_message(conf, repo, pr_number, pr_user_login, channel_id, github
 
 
 def private_message_building(conf, github_token):
-    diff_url = f"https://api.github.com/repos/{conf.org}/{conf.repo}/pulls/{conf.pr_number}"
+    diff_url = (
+        f"https://api.github.com/repos/{conf.org}/{conf.repo}/pulls/{conf.pr_number}"
+    )
     dm_pr_info_text = ""
     dm_pr_info_text += f"<{conf.pr_url}|#{conf.pr_number} {conf.pr_title}>\n"
     dm_pr_info_text += f"*Created by:* {conf.pr_user_login}\n"
@@ -84,7 +91,11 @@ def construct_diff_msg(payload):
         if current_file:
             if line.startswith("+++ ") or line.startswith("--- "):
                 continue
-            elif line.startswith("index ") or line.startswith("new file ") or line.startswith("deleted file "):
+            elif (
+                line.startswith("index ")
+                or line.startswith("new file ")
+                or line.startswith("deleted file ")
+            ):
                 continue
             elif line.startswith(" ") or line.startswith("+") or line.startswith("-"):
                 if line.startswith(" "):
@@ -96,7 +107,8 @@ def construct_diff_msg(payload):
     if current_file:
         formatted_diff += "```\n"
     return formatted_diff
-    
+
+
 def message_building(conf, github_token):
     pr_info_text = ""
     pr_info_text += f"<{conf.pr_url}|#{conf.pr_number} {conf.pr_title}>\n"
@@ -106,7 +118,9 @@ def message_building(conf, github_token):
 
     # Construct clickable links for each file
     for file_path in pr_files:
-        file_content_url = github_tools.get_file_content_url(conf, file_path, github_token)
+        file_content_url = github_tools.get_file_content_url(
+            conf, file_path, github_token
+        )
         if file_content_url:
             filename = os.path.basename(file_path)
             pr_info_text += f"<{file_content_url}|{filename}>\n"
@@ -151,9 +165,7 @@ def add_blocks(text=None, color=None, buttons=None):
     return attachment
 
 
-def generate_button(
-    pr_number, pr_creator, button_comment
-):
+def generate_button(pr_number, pr_creator, button_comment):
     # Define button
     button = [
         {
@@ -167,9 +179,7 @@ def generate_button(
     return button
 
 
-def generate_private_buttons(
-    pr_number, pr_creator, button_approved, button_denied
-):
+def generate_private_buttons(pr_number, pr_creator, button_approved, button_denied):
     # Define button
     buttons = [
         {

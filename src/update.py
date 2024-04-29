@@ -12,28 +12,29 @@ def handle_modal_submit(payload):
         pr_number = payload["view"]["blocks"][0]["element"]["action_id"]
         commenter = payload["user"]["username"]
         submission = utilities.extract_value(
-            payload, ["view", "state", "values", "comment_made", f"{pr_number}", "value"]
+            payload,
+            ["view", "state", "values", "comment_made", f"{pr_number}", "value"],
         )
         org = os.environ.get("ORG")
         repo = os.environ.get("REPO")
         domain = os.environ.get("DOMAIN")
-        submission_with_commenter = f"{submission}<br><br><br><sub>Comment added by {commenter}@{domain}</sub>"
+        submission_with_commenter = (
+            f"{submission}<br><br><br><sub>Comment added by {commenter}@{domain}</sub>"
+        )
         github_token = github_tools.get_github_token()
         github_comment_url = (
             f"https://api.github.com/repos/{org}/{repo}/pulls/{pr_number}/reviews"
         )
         headers = {
-            "Authorization": f"Bearer {github_token}", 
-            "Accept": "application/vnd.github+json", 
-            "X-GitHub-Api-Version": "2022-11-28"
+            "Authorization": f"Bearer {github_token}",
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28",
         }
         data = {"body": submission_with_commenter, "event": "COMMENT"}
         response = requests.post(github_comment_url, headers=headers, json=data)
         print(f"GitHub response: {response}")
-        return "", 200
     except Exception as e:
         return f"{e}"
-
 
 
 def handle_button_click(payload):
@@ -59,18 +60,21 @@ def button_click(payload):
         color = "#0B6623"  # green
     elif "Squash" in decision or "REQUEST_CHANGES" in decision:
         color = "#ffd500"  # yellow
-    assignee_clicked = payload["user"]["id"]
-    assignees = re.findall(r"<@(.*?)>", payload["message"]["text"])
-    if assignee_clicked in assignees:
+    assignees = re.findall(
+        r"<@(.*?)>", payload["message"]["attachments"][1]["blocks"][0]["text"]["text"]
+    )
+    if user in assignees:
         direct_msg_channel = payload["channel"]["id"]
-        find_and_update_slack_message(decision_message, pr_number, timestamp, color, direct_msg_channel)
+        find_and_update_slack_message(
+            decision_message, pr_number, timestamp, color, direct_msg_channel
+        )
         if "MERGE" in decision:
             pr_channel = os.environ.get("CHANNEL_ID")
             update_chan_on_merge(decision_message, timestamp, pr_channel)
     else:
         if "APPROVE" in decision:
             for assignee in assignees:
-                if assignee != assignee_clicked:
+                if assignee != user:
                     find_and_remove_slack_message(timestamp, assignee)
 
 
@@ -78,16 +82,12 @@ def update_slack_message(conf, status, color, timestamp):
     client = WebClient(token=conf.slack_token)
     pr_title = conf.pr_title
     try:
-        update_slack_message_helper(
-            client, timestamp, status, pr_title, color
-        )
+        update_slack_message_helper(client, timestamp, status, pr_title, color)
     except Exception as e:
         print(f"Error updating Slack message: {e}")
 
 
-def find_and_update_slack_message(
-    decision, pr_number, timestamp, color, channel
-):
+def find_and_update_slack_message(decision, pr_number, timestamp, color, channel):
     client = WebClient(token=os.environ.get("SLACK_TOKEN"))
     try:
         find_and_update_slack_message_helper(
@@ -132,12 +132,15 @@ def handle_comment_button_click(payload, action_id):
                             "type": "plain_text_input",
                             "action_id": pr_id,
                             "multiline": True,
-                			"placeholder": {
-					            "type": "plain_text",
-					            "text": "This will comment as your registered GitHub App for PR output."
-				            }
+                            "placeholder": {
+                                "type": "plain_text",
+                                "text": "This will comment as your registered GitHub App for PR output.",
+                            },
                         },
-                        "label": {"type": "plain_text", "text": "Enter your comment to add to the PR:"},
+                        "label": {
+                            "type": "plain_text",
+                            "text": "Enter your comment to add to the PR:",
+                        },
                     }
                 ],
             },
@@ -169,7 +172,9 @@ def update_on_closed(pr_title, decision_message):
             blocks = attachment.get("blocks", [])
             for block in blocks:
                 # Check if the block is of type "section" and contains the PR title
-                if block.get("type") == "section" and pr_title in block.get("text", {}).get("text", ""):
+                if block.get("type") == "section" and pr_title in block.get(
+                    "text", {}
+                ).get("text", ""):
                     # Update only if there are blocks in the attachment
                     last_block_index = len(blocks) - 1
                     last_block = blocks[last_block_index]
@@ -180,13 +185,13 @@ def update_on_closed(pr_title, decision_message):
                                 text = button.get("text", {}).get("text", "")
                                 if text in ["Merge", "Approve"]:
                                     new_block = [
-                                        {
-                                            "type": "mrkdwn", 
-                                            "text": decision_message
-                                        }
+                                        {"type": "mrkdwn", "text": decision_message}
                                     ]
+                                    last_block.pop("elements", None)
                                     last_block["type"] = "context"
                                     last_block["elements"] = new_block
+                                    attachment.pop("color", None)
+                                    attachment.pop("fallback", None)
                         attachment["blocks"] = blocks
 
                         updated_message = {
@@ -205,10 +210,7 @@ def find_and_remove_slack_message(timestamp, user_id):
     client = WebClient(token=os.environ.get("SLACK_TOKEN"))
     try:
         response = client.conversations_history(
-            channel=user_id,
-            latest=timestamp,
-            limit=1,
-            inclusive=True
+            channel=user_id, latest=timestamp, limit=1, inclusive=True
         )
         messages = response.get("messages", [])
         for message in messages:
@@ -229,7 +231,9 @@ def update_slack_message_helper(client, timestamp, status, pr_title, color):
             blocks = attachment.get("blocks", [])
             for block in blocks:
                 # Check if the block is of type "section" and contains the PR title
-                if block.get("type") == "section" and pr_title in block.get("text", {}).get("text", ""):
+                if block.get("type") == "section" and pr_title in block.get(
+                    "text", {}
+                ).get("text", ""):
                     # Iterate through the blocks within this attachment
                     for inner_block in blocks:
                         # Check if the inner block is of type "context" (which contains the "*Checks*: :processing:" text)
@@ -237,7 +241,11 @@ def update_slack_message_helper(client, timestamp, status, pr_title, color):
                             elements = inner_block.get("elements", [])
                             for element in elements:
                                 # Check if the element is of type "mrkdwn" and contains "*Checks*: :processing:"
-                                if element.get("type") == "mrkdwn" and "*Checks*: :processing:" in element.get("text", ""):
+                                if element.get(
+                                    "type"
+                                ) == "mrkdwn" and "*Checks*: :processing:" in element.get(
+                                    "text", ""
+                                ):
                                     # Update the text with the new status
                                     element["text"] = f"*Checks*: {status}"
                                     # Update the attachment color
@@ -252,9 +260,7 @@ def update_slack_message_helper(client, timestamp, status, pr_title, color):
                     client.chat_update(**updated_message)
 
 
-def update_chan_on_merge(
-    decision, timestamp, channel
-):
+def update_chan_on_merge(decision, timestamp, color, channel):
     client = WebClient(token=os.environ.get("SLACK_TOKEN"))
     response = client.conversations_history(
         channel=channel, oldest=timestamp, limit=1, inclusive=True
@@ -274,18 +280,14 @@ def update_chan_on_merge(
                         if button.get("type") == "button":
                             text = button.get("text", {}).get("text", "")
                             if text == "Comment":
-                                new_block = [
-                                    {
-                                        "type": "mrkdwn", 
-                                        "text": decision
-                                    }
-                                ]
+                                new_block = [{"type": "mrkdwn", "text": decision}]
                                 last_block.pop("elements", None)
                                 last_block["type"] = "context"
                                 last_block["elements"] = new_block
                                 attachment.pop("color", None)
                                 attachment.pop("fallback", None)
                     attachment["blocks"] = blocks
+                    attachment["color"] = color
 
     updated_message = {
         "channel": channel,
@@ -317,12 +319,7 @@ def find_and_update_slack_message_helper(
                         if button.get("type") == "button":
                             text = button.get("text", {}).get("text", "")
                             if text == "Merge":
-                                new_block = [
-                                    {
-                                        "type": "mrkdwn", 
-                                        "text": decision
-                                    }
-                                ]
+                                new_block = [{"type": "mrkdwn", "text": decision}]
                                 last_block.pop("elements", None)
                                 last_block["type"] = "context"
                                 last_block["elements"] = new_block

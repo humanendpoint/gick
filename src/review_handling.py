@@ -2,6 +2,7 @@ import os
 import requests
 import github_tools
 import json
+from slack_sdk import WebClient
 
 
 def decision_handling(actions, user):
@@ -22,17 +23,24 @@ def github_decision(decision, actions, assignee):
     action_id = actions[0]["action_id"]
     pull_request_id = action_id.split("-")[0]
     github_token = github_tools.get_github_token()
-    org = os.environ.get('ORG')
-    repo = os.environ.get('REPO')
+    s_token = os.environ.get("SLACK_TOKEN")
+    client = WebClient(token=s_token)
+    re = client.users_profile_get(user=assignee)
+    print(f"user profile response: {re}")
+    decider = re["profile"]["real_name"]
+    org = os.environ.get("ORG")
+    repo = os.environ.get("REPO")
     headers = {
-        "Authorization": f"Bearer {github_token}", 
-        "Accept": "application/vnd.github+json", 
-        "X-GitHub-Api-Version": "2022-11-28"
+        "Authorization": f"Bearer {github_token}",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
     }
     if decision == "APPROVE":
-        data = {"event": decision, "body": f"approved from Slack by {assignee}"}
+        data = {"event": decision, "body": f"approved from Slack by {decider}"}
         data = json.dumps(data)
-        url = f"https://api.github.com/repos/{org}/{repo}/pulls/{pull_request_id}/reviews"
+        url = (
+            f"https://api.github.com/repos/{org}/{repo}/pulls/{pull_request_id}/reviews"
+        )
         try:
             response = requests.post(
                 url,
@@ -53,7 +61,9 @@ def github_decision(decision, actions, assignee):
         decision = decision.lower()
         data = {"merge_method": f"{decision}"}
         data = json.dumps(data)
-        merge_url = f"https://api.github.com/repos/{org}/{repo}/pulls/{pull_request_id}/merge"
+        merge_url = (
+            f"https://api.github.com/repos/{org}/{repo}/pulls/{pull_request_id}/merge"
+        )
         try:
             response = requests.put(
                 merge_url,
