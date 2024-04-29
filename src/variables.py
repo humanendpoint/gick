@@ -3,6 +3,7 @@ from slack_sdk.errors import SlackApiError
 from slack_sdk import WebClient
 import utilities, okta_tools
 
+
 class vars:
     def __init__(self, client, payload, org, repo, github_token):
         self.org = org
@@ -18,8 +19,16 @@ class vars:
         self.pr_number = utilities.extract_value(payload, ["number"])
         self.pr_title = utilities.extract_value(payload, ["title"])
         self.pr_branch = utilities.extract_value(payload, ["head", "ref"])
-        self.assignee_emails = self.get_assignee_emails() or okta_tools.get_okta_usernames(
-            self.org, self.team_slug, self.okta_token, self.okta_url, payload, github_token
+        self.assignee_emails = (
+            self.get_assignee_emails()
+            or okta_tools.get_okta_usernames(
+                self.org,
+                self.team_slug,
+                self.okta_token,
+                self.okta_url,
+                payload,
+                github_token,
+            )
         )
         self.pr_mentions = self.get_slack_users(client)
         self.merge_commit_sha = utilities.extract_value(payload, ["head", "sha"])
@@ -27,9 +36,14 @@ class vars:
     def get_assignee_emails(self):
         secret_value = os.environ.get("ASSIGNEE_EMAILS")
         if secret_value:
-            return secret_value.strip().split()
+            lines = secret_value.strip().split("\n")
+            assignee_emails = {}
+            for line in lines:
+                gh_user, email = line.strip().split(":")
+                assignee_emails[gh_user.strip()] = email.strip()
+            return assignee_emails
         else:
-            return None 
+            return None
 
     def get_slack_users(self, client):
         mention_string = ""

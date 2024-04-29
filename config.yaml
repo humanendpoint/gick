@@ -11,4 +11,5 @@ GH_APP_INSTALL_ID: Your GitHub app install ID
 GITHUB_APP_ID:  Your GitHub app ID
 GITHUB_JWT_PEM_KEY: The JWT .pem key
 DOMAIN: The domain after @ in your email address
-ASSIGNEE_EMAILS: If wanted, use these email addresses to look up Slack IDs for. One address per line.
+ASSIGNEE_EMAILS: >
+  If wanted, use these email addresses to look up Slack IDs for. user: email structure, one per line.
